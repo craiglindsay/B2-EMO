@@ -1,4 +1,4 @@
-//                          Last Revised Date: 02/05/2023
+//                          Last Revised Date: 02/12/2023
 //                             Revised By: craiglindsay
 //                Inspired by the PADAWAN / KnightShade SHADOW effort
 // =======================================================================================
@@ -25,7 +25,7 @@
 //      - PS3 Move Navigation
 //
 //   PS3 Bluetooth library - developed by Kristian Lauszus (kristianl@tkjelectronics.com)
-//   For more information visit my blog: http://blog.tkjelectronics.dk/ or
+//   For more information visit my blog: http://blog.tkjelectronics.dk/
 //
 //
 // =======================================================================================
@@ -1114,6 +1114,40 @@ void centerHead()
 	ServoHeadT.writeMicroseconds(HeadT);
 }
 
+void centerHeadSlow()
+{
+	if (HeadT < HeadTCenter) { 
+		for (int i=HeadT; i<HeadTCenter; i++) {
+		ServoHeadT.writeMicroseconds(i);   // loop HeadT to to center
+		delay(5);
+		}
+	} else {
+		for (int i=HeadT; HeadTCenter<i; i--) {
+		ServoHeadT.writeMicroseconds(i);   // loop HeadT to center
+		delay(5);
+		}
+	}
+	HeadT = HeadTCenter;
+	ServoHeadT.writeMicroseconds(HeadT);
+}
+
+void centerHeadMed()
+{
+	if (HeadT < HeadTCenter) { 
+		for (int i=HeadT; i<HeadTCenter; i++) {
+		ServoHeadT.writeMicroseconds(i);   // loop HeadT to to center
+		delay(1);
+		}
+	} else {
+		for (int i=HeadT; HeadTCenter<i; i--) {
+		ServoHeadT.writeMicroseconds(i);   // loop HeadT to center
+		delay(1);
+		}
+	}
+	HeadT = HeadTCenter;
+	ServoHeadT.writeMicroseconds(HeadT);
+}
+
 void levelHead()
 {
 	if (HeadL < HeadLCenter) { 
@@ -1141,6 +1175,68 @@ void levelHead()
 	ServoHeadR.writeMicroseconds(HeadR);
 }
 
+void levelHeadMed()
+{
+	if (HeadL < HeadLCenter) { 
+		for (int i=HeadL; i<HeadLCenter; i++) {
+		ServoHeadL.writeMicroseconds(i);   // loop HeadT to to center
+		delay(1);
+		}
+	} else {
+		for (int i=HeadL; HeadLCenter<i; i--) {
+		ServoHeadL.writeMicroseconds(i);   // loop HeadT to center
+		delay(1);
+		}
+	}
+	HeadL = HeadLCenter;
+	ServoHeadL.writeMicroseconds(HeadL);
+
+	if (HeadR < HeadRCenter) { 
+		for (int i=HeadR; i<HeadRCenter; i++) {
+		ServoHeadR.writeMicroseconds(i);   // loop HeadT to to center
+		delay(1);
+		}
+	} else {
+		for (int i=HeadR; HeadRCenter<i; i--) {
+		ServoHeadR.writeMicroseconds(i);   // loop HeadT to center
+		delay(1);
+		}
+	}
+	HeadR = HeadRCenter;
+	ServoHeadR.writeMicroseconds(HeadR);
+}
+
+void levelHeadSlow()
+{
+	if (HeadL < HeadLCenter) { 
+		for (int i=HeadL; i<HeadLCenter; i++) {
+		ServoHeadL.writeMicroseconds(i);   // loop HeadT to to center
+		delay(5);
+		}
+	} else {
+		for (int i=HeadL; HeadLCenter<i; i--) {
+		ServoHeadL.writeMicroseconds(i);   // loop HeadT to center
+		delay(5);
+		}
+	}
+	HeadL = HeadLCenter;
+	ServoHeadL.writeMicroseconds(HeadL);
+
+	if (HeadR < HeadRCenter) { 
+		for (int i=HeadR; i<HeadRCenter; i++) {
+		ServoHeadR.writeMicroseconds(i);   // loop HeadT to to center
+		delay(5);
+		}
+	} else {
+		for (int i=HeadR; HeadRCenter<i; i--) {
+		ServoHeadR.writeMicroseconds(i);   // loop HeadT to center
+		}delay(5);
+
+	}
+	HeadR = HeadRCenter;
+	ServoHeadR.writeMicroseconds(HeadR);
+}
+
 void raiseHead()
 {
 	for (int i=HeadZ; HeadZMin<i; i--) {
@@ -1149,10 +1245,46 @@ void raiseHead()
 	HeadZ = HeadZMin;
 }
 
+void raiseHeadMed()
+{
+	for (int i=HeadZ; HeadZMin<i; i--) {
+	ServoHeadZ.writeMicroseconds(i);   // loop head Z to to min value (opened)
+	delay(1);
+	}
+	HeadZ = HeadZMin;
+}
+
+void raiseHeadSlow()
+{
+	for (int i=HeadZ; HeadZMin<i; i--) {
+	ServoHeadZ.writeMicroseconds(i);   // loop head Z to to min value (opened)
+	delay(5);
+	}
+	HeadZ = HeadZMin;
+}
+
 void lowerHead()
 {
 	for (int i=HeadZ; i<HeadZMax; i++) {
 	ServoHeadZ.writeMicroseconds(i);   // loop head Z to to max value (closed)
+	}
+	HeadZ = HeadZMax;
+}
+
+void lowerHeadMed()
+{
+	for (int i=HeadZ; i<HeadZMax; i++) {
+	ServoHeadZ.writeMicroseconds(i);   // loop head Z to to max value (closed)
+	delay(1);
+	}
+	HeadZ = HeadZMax;
+}
+
+void lowerHeadSlow()
+{
+	for (int i=HeadZ; i<HeadZMax; i++) {
+	ServoHeadZ.writeMicroseconds(i);   // loop head Z to to max value (closed)
+	delay(5);
 	}
 	HeadZ = HeadZMax;
 }
@@ -1172,6 +1304,38 @@ void tuckInBody()   // to be replaced with routine
 	BodyZ2 = BodyZ2Max;
 }
 
+void tuckInBodyMed()   // to be replaced with routine
+{
+    Serial.println("Tuck In");
+	myDFPlayer.play(11);
+	for (int i=BodyZ2; i<BodyZ2Max; i++) {
+	ServoBodyZ2.writeMicroseconds(i);   // loop body z2 to to max value (closed)
+	delay(1);
+	}
+	for (int i=BodyZ1; BodyZ1Min<i; i--) {
+	ServoBodyZ1.writeMicroseconds(i);   // loop body z1 to min (closed)
+	delay(1);
+	}
+	BodyZ1 = BodyZ1Min;
+	BodyZ2 = BodyZ2Max;
+}
+
+void tuckInBodySlow()   // to be replaced with routine
+{
+    Serial.println("Tuck In");
+	myDFPlayer.play(11);
+	for (int i=BodyZ2; i<BodyZ2Max; i++) {
+	ServoBodyZ2.writeMicroseconds(i);   // loop body z2 to to max value (closed)
+	delay(5);
+	}
+	for (int i=BodyZ1; BodyZ1Min<i; i--) {
+	ServoBodyZ1.writeMicroseconds(i);   // loop body z1 to min (closed)
+	delay(5);
+	}
+	BodyZ1 = BodyZ1Min;
+	BodyZ2 = BodyZ2Max;
+}
+
 void expandBody()   // to be replaced with routine
 {
 	Serial.println("Expand");
@@ -1180,6 +1344,38 @@ void expandBody()   // to be replaced with routine
     }
 	for (int i=BodyZ2; BodyZ2Min<i; i--) {
 	ServoBodyZ2.writeMicroseconds(i);   // loop body z1 to min (opened)
+	}
+	BodyZ1 = BodyZ1Max;
+	BodyZ2 = BodyZ2Min;
+	myDFPlayer.play(11);    
+}
+
+void expandBodyMed()   // to be replaced with routine
+{
+	Serial.println("Expand");
+	for (int i=BodyZ1; i<BodyZ1Max; i++) {
+	ServoBodyZ1.writeMicroseconds(i);   // loop body z2 to to max value (opened)
+    delay(1);
+	}
+	for (int i=BodyZ2; BodyZ2Min<i; i--) {
+	ServoBodyZ2.writeMicroseconds(i);   // loop body z1 to min (opened)
+	}delay(1);
+
+	BodyZ1 = BodyZ1Max;
+	BodyZ2 = BodyZ2Min;
+	myDFPlayer.play(11);    
+}
+
+void expandBodySlow()   // to be replaced with routine
+{
+	Serial.println("Expand");
+	for (int i=BodyZ1; i<BodyZ1Max; i++) {
+	ServoBodyZ1.writeMicroseconds(i);   // loop body z2 to to max value (opened)
+    delay(5);
+	}
+	for (int i=BodyZ2; BodyZ2Min<i; i--) {
+	ServoBodyZ2.writeMicroseconds(i);   // loop body z1 to min (opened)
+	delay(5);
 	}
 	BodyZ1 = BodyZ1Max;
 	BodyZ2 = BodyZ2Min;
