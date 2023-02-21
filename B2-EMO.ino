@@ -1,4 +1,4 @@
-//                          Last Revised Date: 02/12/2023
+//                          Last Revised Date: 02/18/2023
 //                             Revised By: craiglindsay
 //                Inspired by the PADAWAN / KnightShade SHADOW effort
 // =======================================================================================
@@ -33,21 +33,20 @@
 //  Serial3.print("C"); sent from Body ADK to another arduino listening for serial commands
 //  Software serial used to send commands to the DF player just because, might move to HW
 
+
 // ---------------------------------------------------------------------------------------
 // Libraries
 // ---------------------------------------------------------------------------------------
 #include <usbhub.h>
 #include <PS3BT.h>
-#include <SoftwareSerial.h>    
 #include <Servo.h>
 #include <DFRobotDFPlayerMini.h>
-
 
 // ---------------------------------------------------------------------------------------
 // General User Settings
 // ---------------------------------------------------------------------------------------
 String PS3ControllerFootMac = "00:26:43:CF:E9:8F";   //Set this to your FOOT PS3 controller MAC address
-String PS3ControllerBackupFootMac = "00:07:04:B7:98:7D";  //Set to the MAC Address of your BACKUP FOOT controller (Optional)
+String PS3ControllerBackupFootMac = "E0:AE:5E:91:8A:21";  //Set to the MAC Address of your BACKUP FOOT controller (Optional)
 byte drivespeed1 = 65;   //For Speed Setting (Normal): set this to whatever speeds works for you. 0-stop, 127-full speed.
 byte drivespeed2 = 127;  //For Speed Setting (Over Throttle): set this for when needing extra power. 0-stop, 127-full speed.
 byte turnspeed = 60;      // the higher this number the faster it will spin in place, lower - the easier to control. Recommend beginner: 40 to 50, experienced: 50+, I like 75
@@ -68,21 +67,22 @@ int RotateStop = 1500;
 int StrafeMin = 1000;
 int StrafeMax = 2000;
 int StrafeStop = 1500;
-int HeadLMin = 1000;
-int HeadLMax = 2000;
-int HeadLCenter = 1500;
-int HeadRMin = 1000;
-int HeadRMax = 2000;
-int HeadRCenter = 1650;
-int HeadZMin = 200;
-int HeadZMax = 1925;
-int HeadTMin = 200;
-int HeadTMax = 2800;
-int HeadTCenter = 1400;
-int BodyZ1Min = 1100;
-int BodyZ1Max = 1900;
-int BodyZ2Min = 1000;
-int BodyZ2Max = 1950;
+int HeadRightMin = 1125;
+int HeadRightMax = 1950;
+int HeadRightCenter = 1500;   // Level for the R head servo
+int HeadLeftMin = 1200;
+int HeadLeftMax = 2000;
+int HeadLeftCenter = 1650;   // Level for the L servo
+int HeadZMin = 200;   //Min is all the way up in this case
+int HeadZMax = 1925;  //Max is all the way down in this case
+int HeadZMid = (HeadZMin + HeadZMax)/2;
+int HeadTMin = 200;     // head turning left/right
+int HeadTMax = 2800;    // head turning left/right
+int HeadTCenter = 1425;  // set this to the center
+int BodyZ1Min = 1100; // This is body Z1 closed 
+int BodyZ1Max = 1900; // This is body Z1 open
+int BodyZ2Min = 1000; // This is body Z1 open  
+int BodyZ2Max = 1950; // This is body Z1 closed 
 int FLSpreadMin = 800;
 int FLSpreadMax = 2000;
 int FRSpreadMin = 900;
@@ -105,23 +105,26 @@ int BLHeightMax = 2400;
 // Initial Servo Values at power on
 // ---------------------------------------------------------------------------------------
 
-int Drive = 1500;
-int Rotate = 1500;
-int Strafe = 1500;
-int HeadL = HeadLCenter;
-int HeadR = HeadRCenter;
+int Drive = 1500;       //1500 is stopped
+int Rotate = 1500;		//1500 is stopped
+int Strafe = 1500;		//1500 is stopped
+int HeadRight = HeadRightCenter;
+int HeadLeft = HeadLeftCenter;
 int HeadT = HeadTCenter;
 int HeadZ = 1200;
-int BodyZ1 = 1500;
-int BodyZ2 = 1500;
-int FLSpread = 1500;
-int FRSpread = 1500;
-int BRSpread = 1500;
-int BLSpread = 1500;
-int FLHeight = 1500;
-int FRHeight = 1500;
-int BRHeight = 1500;
-int BLHeight = 1500;
+int BodyZ1 = BodyZ1Max;  //Best to expand body at startup so lower panels can be removed
+int BodyZ2 = BodyZ2Min;  //Best to expand body at startup so lower panels can be removed
+int FLSpread = (FLSpreadMin + FLSpreadMax)/2;
+int FRSpread = (FRSpreadMin + FRSpreadMax)/2;
+int BRSpread = (BRSpreadMin + BRSpreadMax)/2;
+int BLSpread = (BLSpreadMin + BLSpreadMax)/2;
+int FLHeight = (FLHeightMin + FLHeightMax)/2;
+int FRHeight = (FRHeightMin + FRHeightMax)/2;
+int BRHeight = (BRHeightMin + BRHeightMax)/2;
+int BLHeight = (BLHeightMin + BLHeightMax)/2;
+int turnAmount = HeadTCenter;
+
+
 
 // ---------------------------------------------------------------------------------------
 // Servo and Motor Pin Setup
@@ -130,8 +133,8 @@ int BLHeight = 1500;
 #define PinDrive 22
 #define PinRotate 24
 #define PinStrafe 26
-#define PinHeadL 28
-#define PinHeadR 30
+#define PinHeadRight 28
+#define PinHeadLeft 30
 #define PinHeadT 32
 #define PinHeadZ 34
 #define PinBodyZ1 36
@@ -148,6 +151,8 @@ int BLHeight = 1500;
 #define PinUpperMotorB 3
 #define PinLowerMotorA 4
 #define PinLowerMotorB 5
+#define Pin1FeetServoAttached 7
+#define Pin2FeetServoAttached 8
 
 // ---------------------------------------------------------------------------------------
 // Name the Servos
@@ -156,8 +161,8 @@ int BLHeight = 1500;
 Servo ServoDrive;
 Servo ServoRotate;
 Servo ServoStrafe;
-Servo ServoHeadL;
-Servo ServoHeadR;
+Servo ServoHeadRight;
+Servo ServoHeadLeft;
 Servo ServoHeadZ;
 Servo ServoHeadT;
 Servo ServoBodyZ1;
@@ -174,7 +179,6 @@ Servo ServoBLSpread;
 // ---------------------------------------------------------------------------------------
 // Setup Sound Settings
 // ---------------------------------------------------------------------------------------
-SoftwareSerial mySoftwareSerial(10, 11); // RX, TX Could be moved to serial 1 or 2 on mega
 DFRobotDFPlayerMini myDFPlayer;          
 
 // ---------------------------------------------------------------------------------------
@@ -187,14 +191,35 @@ long footServoMillis = millis();
 
 int serialLatency = 25;  //This is a delay factor in ms to prevent queueing of the Serial data. 25ms seems approprate for HardwareSerial, values of 50ms or larger are needed for Softare Emulation
 int speedToggleButtonCounter = 0;
-boolean footServosAttached = false;
+boolean footServosPowered = true;
 
 unsigned long soundprevmillis = 0;    // storage for sound timer
 unsigned long soundcurrentmillis = 0; // storage for sound timer
 unsigned long soundTimer;             // storage for sound timer
-int soundNum;                         // Sound number
+int soundNum = 0;                     // sound number
 
-int animate = 0; 
+
+int animationStep = 0;                  // animation step for routines
+unsigned long animatecurrentmillis = 0; // storage for animation timer
+unsigned long animateprevmillis = 0;    // storage for animation timer
+unsigned long animateTimer;             // storage for animation timer
+int animationTrigger = 0;
+unsigned long animateDelay = 0;
+int secondsInAnimation =0;
+
+boolean CenterHeadTrigger = false;
+boolean LevelHeadTrigger = false;
+boolean TiltHeadUpTrigger = false;
+boolean TiltHeadDownTrigger = false;
+boolean TiltHeadLeftTrigger = false;
+boolean TiltHeadRightTrigger = false;
+boolean HeadUpTrigger = false;
+boolean HeadDownTrigger = false;
+boolean HeadMidTrigger = false;
+boolean TurnHeadTrigger = false;
+boolean BodyTuckInTrigger = false;
+boolean BodyExpandTrigger = false;
+
 // ---------------------------------------------------------------------------------------
 // Setup for USB and Bluetooth Devices////////////////////////////
 // ---------------------------------------------------------------------------------------
@@ -221,6 +246,15 @@ int StickX = 0;
 
 void setup()
 {
+    //setup for DF Mini player
+    Serial2.begin(9600);       //Setup Serial for DF player
+    myDFPlayer.begin(Serial2); //Use softwareSerial to communicate with dfplayer
+    myDFPlayer.volume(volume);          //Set dfplayer volume value above
+    myDFPlayer.play(16);                //Play the 21st mp3 as a startup sound
+
+    //Setup for serial 3
+    Serial3.begin(115200);            //Serial3:: Used for lighting to arduino nano
+  
 	Serial.begin(115200);             // For debugging, in each section can uncomment serial outputs
 	while (!Serial);
 	if (Usb.Init() == -1)
@@ -229,15 +263,6 @@ void setup()
     while (1); //halt
 	}
 	Serial.print(F("\r\nBluetooth Library Started"));
-	
-  //setup for DF Mini player
-  mySoftwareSerial.begin(9600);       //Setup Serial for DF player
-  myDFPlayer.begin(mySoftwareSerial); //Use softwareSerial to communicate with dfplayer
-  myDFPlayer.volume(volume);          //Set dfplayer volume value above
-  myDFPlayer.play(16);                //Play the 21st mp3 as a startup sound
-  
-  //Setup for serial 3
-  Serial3.begin(115200);            //Serial3:: Used for lighting to arduino nano
   
   //Setup for PS3
   PS3Nav->attachOnInit(onInitPS3Nav); // onInitPS3Nav is called upon a new connection
@@ -249,12 +274,20 @@ void setup()
 ServoDrive.attach(PinDrive);
 ServoRotate.attach(PinRotate);
 ServoStrafe.attach(PinStrafe);
-ServoHeadL.attach(PinHeadL);
-ServoHeadR.attach(PinHeadR);
+ServoHeadRight.attach(PinHeadRight);
+ServoHeadLeft.attach(PinHeadLeft);
 ServoHeadZ.attach(PinHeadZ);
 ServoHeadT.attach(PinHeadT);;
 ServoBodyZ1.attach(PinBodyZ1);
 ServoBodyZ2.attach(PinBodyZ2);
+ServoFLHeight.attach(PinFLHeight);
+ServoFRHeight.attach(PinFRHeight);
+ServoBRHeight.attach(PinBRHeight);
+ServoBLHeight.attach(PinBLHeight);
+ServoFLSpread.attach(PinFLSpread);
+ServoFRSpread.attach(PinFRSpread);
+ServoBRSpread.attach(PinBRSpread);
+ServoBLSpread.attach(PinBLSpread);
 
 // =======================================================================================
 // Set Initial Servo Positions
@@ -262,8 +295,8 @@ ServoBodyZ2.attach(PinBodyZ2);
 ServoDrive.writeMicroseconds(Drive);
 ServoRotate.writeMicroseconds(Rotate);
 ServoStrafe.writeMicroseconds(Strafe);
-ServoHeadL.writeMicroseconds(HeadL);
-ServoHeadR.writeMicroseconds(HeadR);
+ServoHeadRight.writeMicroseconds(HeadRight);
+ServoHeadLeft.writeMicroseconds(HeadLeft);
 ServoHeadZ.writeMicroseconds(HeadZ);
 ServoHeadT.writeMicroseconds(HeadT);
 ServoBodyZ1.writeMicroseconds(BodyZ1);
@@ -284,10 +317,15 @@ pinMode(PinUpperMotorA, OUTPUT);    // Set motor controller pins to output
 pinMode(PinUpperMotorB, OUTPUT);
 pinMode(PinLowerMotorA, OUTPUT);
 pinMode(PinLowerMotorB, OUTPUT);
+pinMode(Pin1FeetServoAttached, OUTPUT);
+pinMode(Pin2FeetServoAttached, OUTPUT);
 digitalWrite(PinUpperMotorA, HIGH);  //Write High (Disable) to all 4 motor controller pins
 digitalWrite(PinUpperMotorB, HIGH);  
 digitalWrite(PinLowerMotorA, HIGH);  
 digitalWrite(PinLowerMotorB, HIGH);  
+digitalWrite(Pin1FeetServoAttached, HIGH);  
+delay(100);
+digitalWrite(Pin2FeetServoAttached, HIGH);  
 
 }
 // =======================================================================================
@@ -300,11 +338,12 @@ void loop()   	//LOOP through functions from highest to lowest priority.
 		return; }
 	MotorDrive();     // reads and acts on PS3 remote input
 	toggleSettings(); // reads the PS3 remote for other button presses
-	footServoDetach(); // Looks to see if it has be 5 seconds since last foot height adjustment
+	footServoPowerDown(); // Looks to see if it has be 5 seconds since last foot height adjustment
 	currentMillis = millis();
 	if (soundNum >0) { animationSounds(); }
-	if (animate == 1) { animationLow(); }
-	if (animate == 2) { animationHigh(); }
+	if (animationTrigger == 1) { animation1(); }
+	if (animationTrigger == 2) { animation2(); }
+	animations();
 }
 
 // =======================================================================================
@@ -384,8 +423,6 @@ boolean ps3MotorDrive(PS3BT* myPS3 = PS3Nav)
           Drive = 1500 - 5.262 * StickY;
         } else { Drive = 1500 - StickY * 5.262; }
       }
-
-     
 			StickX = (myPS3->getAnalogHat(LeftHatX));  //Maping sifferent regions of the HAT to different values to allow finer control at slow speeds
 			if ( abs(StickY) > 50)
 			StickX = (map(myPS3->getAnalogHat(LeftHatX), 54, 200, -(turnspeed/4), (turnspeed/4)));
@@ -400,10 +437,14 @@ boolean ps3MotorDrive(PS3BT* myPS3 = PS3Nav)
 			if ( (currentMillis - previousFootMillis) > serialLatency  ) {
 				if (StickY != 0 || abs(StickX) > 1) 
 				 {
-         if (myPS3->getButtonPress(L1) && !myPS3->getButtonPress(L2) && !myPS3->getButtonPress(L3))  // L1 and Stick - HeadZ / HeadTurn
+
+		  //**************************************************
+		  // L1 and Stick - HeadZ / HeadTurn
+		  //**************************************************  
+         if (myPS3->getButtonPress(L1) && !myPS3->getButtonPress(L2) && !myPS3->getButtonPress(L3))  
           {
           //Serial.print("Head Z/T ");
-          HeadZ = HeadZ + (StickY/2);
+          HeadZ = HeadZ + (StickY/1.5);
           if (HeadZ > HeadZMax) HeadZ=HeadZMax;   
           if (HeadZ < HeadZMin) HeadZ=HeadZMin;     
           HeadT = HeadT - ((StickX)/1.5);
@@ -416,24 +457,29 @@ boolean ps3MotorDrive(PS3BT* myPS3 = PS3Nav)
           //Serial.print(" HeadT: ");
           //Serial.println(HeadT);
           } 
-          else if (myPS3->getButtonPress(L2) && !myPS3->getButtonPress(L1) && !myPS3->getButtonPress(L3))  // L2 and Stick - Head L & R Servo 
+		  //**************************************************
+		  // L2 and Stick - Head L & R Servo 
+		  //**************************************************  
+          else if (myPS3->getButtonPress(L2) && !myPS3->getButtonPress(L1) && !myPS3->getButtonPress(L3)) 
            {
-           Serial.print("Head R/L ");
-		   HeadR = HeadR - ((StickY*-1) + (StickX))/2;                     // New method for incrementing with stick movement but staying in place
-		   HeadL = HeadL - ((StickY) + (StickX))/2;                        // New method for incrementing with stick movement but staying in place
-           //HeadR = ((1500 - (12*StickY*-1)) + (1500 + (12*StickX*-1)))/2; // Old method for moving with stick
-           //HeadL = ((1500 - (12*StickY)) + (1500 - (12*StickX)))/2;       // Old method for moving with stick
-           if (HeadL > HeadLMax) HeadL=HeadLMax;
-           if (HeadL < HeadLMin) HeadL=HeadLMin;
-           if (HeadR > HeadRMax) HeadR=HeadRMax;
-           if (HeadR < HeadRMin) HeadR=HeadRMin;
-           ServoHeadL.writeMicroseconds(HeadL);
-           ServoHeadR.writeMicroseconds(HeadR);
-           //Serial.print("HeadL: ");
-           //Serial.print(HeadL); 
-           //Serial.print(" HeadR: ");
-           //Serial.println(HeadR); 
-          } 
+           HeadLeft = HeadLeft - ((StickY*-1) + (StickX))/1.5;                    // New method for incrementing with stick movement but staying in place
+		   HeadRight = HeadRight - ((StickY) + (StickX))/1.5;                       // New method for incrementing with stick movement but staying in place
+           //HeadLeft = ((1500 - (12*StickY*-1)) + (1500 + (12*StickX*-1)))/2; // Old method for moving with stick, too jerky
+           //HeadRight = ((1500 - (12*StickY)) + (1500 - (12*StickX)))/2;       // Old method for moving with stick, too jerky
+           if (HeadRight > HeadRightMax) HeadRight=HeadRightMax;
+           if (HeadRight < HeadRightMin) HeadRight=HeadRightMin;
+           if (HeadLeft > HeadLeftMax) HeadLeft=HeadLeftMax;
+           if (HeadLeft < HeadLeftMin) HeadLeft=HeadLeftMin;
+           ServoHeadRight.writeMicroseconds(HeadRight);
+           ServoHeadLeft.writeMicroseconds(HeadLeft);
+           //Serial.print("HeadRight: ");
+           //Serial.print(HeadRight); 
+           //Serial.print(" HeadLeft: ");
+           //Serial.println(HeadLeft); 
+          }
+		  //**************************************************
+		  // L3 Stick - Drive / Strafe 
+		  //**************************************************  
            else if (myPS3->getButtonPress(L3) && !myPS3->getButtonPress(L1) && !myPS3->getButtonPress(L2))  // L3 Stick - Drive / Strafe 
           {
            //Serial.print("Drive/Strafe ");
@@ -453,8 +499,11 @@ boolean ps3MotorDrive(PS3BT* myPS3 = PS3Nav)
            //Serial.print(Drive); 
            //Serial.print(" Strafe: ");
            //Serial.println(Strafe); 
-          } 
-          else if (myPS3->getButtonPress(L1) && myPS3->getButtonPress(L2) && myPS3->getButtonPress(L3))  // Stick L1+L2+L3 Feet control for direction leaning 
+          }
+		  //***************************************************
+		  // Stick L1+L2+L3 Feet height for directional leaning
+		  //***************************************************  
+          else if (myPS3->getButtonPress(L1) && myPS3->getButtonPress(L2) && myPS3->getButtonPress(L3))  
           {
           // Serial.print("Head Foot Up/Down ");
           //For Testing X and devloping the mix
@@ -482,7 +531,7 @@ boolean ps3MotorDrive(PS3BT* myPS3 = PS3Nav)
           if (FRHeight < FRHeightMin) FRHeight=FRHeightMin;
           if (BLHeight > BLHeightMax) BLHeight=BLHeightMax;
           if (BLHeight < BLHeightMin) BLHeight=BLHeightMin;
-		  FootServoAttach();
+		  FootServoPowerUp();
           ServoFLHeight.writeMicroseconds(FLHeight);
           ServoFRHeight.writeMicroseconds(FRHeight);
           ServoBRHeight.writeMicroseconds(BRHeight);
@@ -495,7 +544,10 @@ boolean ps3MotorDrive(PS3BT* myPS3 = PS3Nav)
           //Serial.print (BRHeight);
           //Serial.print (" BL:");
           //Serial.println (BLHeight);
-          } 
+          }
+		  //**************************************************
+		  // Stick - Drive/Rotate
+		  //**************************************************  
           else if (!myPS3->getButtonPress(L1) && !myPS3->getButtonPress(L2) && !myPS3->getButtonPress(L3))  // Stick - Drive/Rotate 
           {
            Drive = (1500 - 5.262 * StickY);
@@ -556,22 +608,23 @@ void ps3ToggleSettings(PS3BT* myPS3 = PS3Nav)
 	// Circle + Up 
 	if(myPS3->getButtonPress(CIRCLE) && myPS3->getButtonClick(UP))
 	{
-		raiseHead();
+		HeadUpTrigger=1;
+		
 	}
 	// Circle + Down 
 	if(myPS3->getButtonPress(CIRCLE) && myPS3->getButtonClick(DOWN))
 	{
-		lowerHead();
+		HeadDownTrigger=1;
 	}
 	// Circle + Left 
 	if(myPS3->getButtonPress(CIRCLE) && myPS3->getButtonClick(LEFT))
 	{
-		centerHead();
+		CenterHeadTrigger=1;
 	}
 	// Circle + Right 
 	if(myPS3->getButtonPress(CIRCLE) && myPS3->getButtonClick(RIGHT))
 	{
-		levelHead();
+		LevelHeadTrigger=1;
 	}
 	// Circle + Cross 
 	if(myPS3->getButtonPress(CIRCLE) && myPS3->getButtonClick(CROSS))
@@ -580,10 +633,14 @@ void ps3ToggleSettings(PS3BT* myPS3 = PS3Nav)
 	// Circle + L1  
 	if(myPS3->getButtonPress(CIRCLE) && myPS3->getButtonClick(L1))
 	{
+		CenterHeadTrigger=1;
+		LevelHeadTrigger=1;
 	}
 	// Circle + L2 
 	if(myPS3->getButtonPress(CIRCLE) && myPS3->getButtonClick(L2))
 	{
+		CenterHeadTrigger=1;
+		LevelHeadTrigger=1;
 	}
 	// Circle + L3 
 	if(myPS3->getButtonPress(CIRCLE) && myPS3->getButtonClick(L3))
@@ -600,62 +657,23 @@ void ps3ToggleSettings(PS3BT* myPS3 = PS3Nav)
 	// Cross + Up - Spin rings
 	if(myPS3->getButtonPress(CROSS) && myPS3->getButtonClick(UP))
 	{
-	digitalWrite(PinUpperMotorA, LOW);
-    digitalWrite(PinUpperMotorB, HIGH);
-    digitalWrite(PinLowerMotorA, HIGH);
-    digitalWrite(PinLowerMotorB, LOW);
-    myDFPlayer.play(11);
-	delay(700);
-    digitalWrite(PinUpperMotorA, HIGH);
-    digitalWrite(PinUpperMotorB, HIGH);
-    digitalWrite(PinLowerMotorA, HIGH);
-    digitalWrite(PinLowerMotorB, HIGH);
-    //  if (volume < 28) volume = volume +3;
-	//myDFPlayer.volume(volume);  // Volume up
+	
+	wobble(100);
 	}
 	// Cross + Down - Spin rings
 	if(myPS3->getButtonPress(CROSS) && myPS3->getButtonClick(DOWN))
 	{
-    digitalWrite(PinUpperMotorA, HIGH);
-    digitalWrite(PinUpperMotorB, LOW);
-    digitalWrite(PinLowerMotorA, LOW);
-    digitalWrite(PinLowerMotorB, HIGH);
-    myDFPlayer.play(11);
-	delay(700);
-    digitalWrite(PinUpperMotorA, HIGH);
-    digitalWrite(PinUpperMotorB, HIGH);
-    digitalWrite(PinLowerMotorA, HIGH);
-    digitalWrite(PinLowerMotorB, HIGH);
-	//if (volume >2) volume = volume -3;
-	//myDFPlayer.volume(volume);  //Volume down 
+	spinTLBL(500);
 	}
 	// Cross + Left - Spin rings
 	if(myPS3->getButtonPress(CROSS) && myPS3->getButtonClick(LEFT))
 	{
-    digitalWrite(PinUpperMotorA, LOW);
-    digitalWrite(PinUpperMotorB, HIGH);
-    digitalWrite(PinLowerMotorA, LOW);
-    digitalWrite(PinLowerMotorB, HIGH);
-    myDFPlayer.play(11);
-	delay(700);
-    digitalWrite(PinUpperMotorA, HIGH);
-    digitalWrite(PinUpperMotorB, HIGH);
-    digitalWrite(PinLowerMotorA, HIGH);
-    digitalWrite(PinLowerMotorB, HIGH);
+	spinTRBL(250);
 	}
 	// Cross + Right - Spin rings
 	if(myPS3->getButtonPress(CROSS) && myPS3->getButtonClick(RIGHT))
 	{
-    digitalWrite(PinUpperMotorA, HIGH);
-    digitalWrite(PinUpperMotorB, LOW);
-    digitalWrite(PinLowerMotorA, HIGH);
-    digitalWrite(PinLowerMotorB, LOW);
-    myDFPlayer.play(11);
-	delay(700);
-    digitalWrite(PinUpperMotorA, HIGH);
-    digitalWrite(PinUpperMotorB, HIGH);
-    digitalWrite(PinLowerMotorA, HIGH);
-    digitalWrite(PinLowerMotorB, HIGH);
+	spinTLBR(150);
 	}
 	// Cross + Circle
 	if(myPS3->getButtonPress(CROSS) && myPS3->getButtonClick(CIRCLE))
@@ -702,27 +720,23 @@ void ps3ToggleSettings(PS3BT* myPS3 = PS3Nav)
 	// PS + Up - B2 Expands
 	if(myPS3->getButtonPress(PS) && myPS3->getButtonClick(UP))
 	{
-		expandBody();
-		raiseHead();
-		levelHead();
-		centerHead();
+		BodyExpandTrigger=1;
+		HeadUpTrigger=1;
+		LevelHeadTrigger=1;
+		CenterHeadTrigger=1;
 	}
 	// PS + Down  - B2 Tucks-In
 	if(myPS3->getButtonPress(PS) && myPS3->getButtonClick(DOWN))
 	{
-		levelHead();
-		centerHead();
-		lowerHead();
-		tuckInBody();
-
+		LevelHeadTrigger=1;
+		CenterHeadTrigger=1;
+		HeadDownTrigger=1;
+		BodyTuckInTrigger=1;
 	}
-	// PS + Left - Toggles automatic sounds
+	// PS + Left - 
 	if(myPS3->getButtonPress(PS) && myPS3->getButtonClick(LEFT))
 	{
-		if (soundNum == 0) {
-			soundNum = 1;
-			soundprevmillis = soundcurrentmillis;
-			} else {soundNum = 0;}
+		wobble(150);
 	}
 	// PS + Right 
 	if(myPS3->getButtonPress(PS) && myPS3->getButtonClick(RIGHT))
@@ -731,15 +745,30 @@ void ps3ToggleSettings(PS3BT* myPS3 = PS3Nav)
 	// PS + Circle -
 	if(myPS3->getButtonPress(PS) && myPS3->getButtonClick(CIRCLE))
 	{
+	if (soundNum == 0) {
+		soundNum = 1;
+		soundcurrentmillis = millis();
+		soundprevmillis = soundcurrentmillis;
+	} else {soundNum = 0;}
 	}
 	// PS + Cross - Automation routine toggle, Off, Low, High
 	if(myPS3->getButtonPress(PS) && myPS3->getButtonClick(CROSS))
 	{
-			if (animate == 0) {
-			animate = 1;
-			} else if (animate == 1) {
-			animate = 2;
-			} else {animate = 0;}	
+	if (animationTrigger == 0) {
+		animationTrigger = 1;            
+		animationStep = 1;
+		animatecurrentmillis = millis();
+		animateprevmillis = animatecurrentmillis;
+		Serial.print ("Animation");
+        Serial.print (animationTrigger);
+		//} 
+		//else if (animationTrigger == 1) {
+		//animationTrigger = 0;              // changed to zero for testing, canbe changed back to ++ to increment here to go to additional animation routines
+		} else {animationTrigger = 0;
+		animationStep = 0;
+		Serial.print ("Animation");
+        Serial.print (animationTrigger);
+		}	
 	}
 	// PS + L1 
 	if(!myPS3->getButtonPress(L2) && myPS3->getButtonPress(PS) && myPS3->getButtonClick(L1))
@@ -763,10 +792,10 @@ void ps3ToggleSettings(PS3BT* myPS3 = PS3Nav)
 			if (!overSpeedSelected)
 			{
 				overSpeedSelected = true;
-				myDFPlayer.play(20); // Enable sound (20)
+				myDFPlayer.play(20); // Enable sound (16)
 			} else {
 				overSpeedSelected = false;
-				myDFPlayer.play(21); // Diable sound (21)
+				myDFPlayer.play(21); // Diable sound (15)
 			}
 		}
 	}
@@ -777,10 +806,12 @@ void ps3ToggleSettings(PS3BT* myPS3 = PS3Nav)
 	// L1 + L2 + Up
 	if(myPS3->getButtonPress(L2) && myPS3->getButtonPress(L1) && myPS3->getButtonClick(UP))
 	{
+	Serial2.print("0");  // future lighting test
 	}
 	//  L1 + L2 + Down
 	if(myPS3->getButtonPress(L2) && myPS3->getButtonPress(L1) && myPS3->getButtonClick(DOWN))
 	{
+	Serial2.print("1");  // future lighting test
 	}
 	// L1 + L2 + Left
 	if(myPS3->getButtonPress(L2) && myPS3->getButtonPress(L1) && myPS3->getButtonClick(LEFT))
@@ -809,12 +840,12 @@ void ps3ToggleSettings(PS3BT* myPS3 = PS3Nav)
 	// L2 + Up
 	if(!myPS3->getButtonPress(L1) && myPS3->getButtonPress(L2) && myPS3->getButtonClick(UP))
 	{
-    expandBody();
+    BodyExpandTrigger=1;
 	}
 	// L2 + Down 
 	if(!myPS3->getButtonPress(L1) && myPS3->getButtonPress(L2) && myPS3->getButtonClick(DOWN))
 	{
-	tuckInBody();
+	BodyTuckInTrigger=1;
 	}
 	// L2 + Left 
 	if(!myPS3->getButtonPress(L1) && myPS3->getButtonPress(L2) && myPS3->getButtonClick(LEFT))
@@ -827,25 +858,12 @@ void ps3ToggleSettings(PS3BT* myPS3 = PS3Nav)
           //Serial.print(FRSpread);
           //Serial.print(" BL:");
           //Serial.println(BLSpread);
-		  Serial.println("Activating Spread Servos");
-		  ServoFLSpread.attach(PinFLSpread);  // Enable the spread servos
-          ServoFRSpread.attach(PinFRSpread);
-          ServoBRSpread.attach(PinBRSpread);
-		  ServoBLSpread.attach(PinBLSpread);
-		  Serial.println("Moving Spread Servos");
-          ServoFLSpread.writeMicroseconds(FLSpreadMin);  // Move the spread servos
+		  //Serial.println("Activating Spread Servos");
+		  FootServoPowerUp();
+		  ServoFLSpread.writeMicroseconds(FLSpreadMin);  // Move the spread servos
           ServoBRSpread.writeMicroseconds(BRSpreadMin);
           ServoFRSpread.writeMicroseconds(FRSpreadMax);
           ServoBLSpread.writeMicroseconds(BLSpreadMax);
-		  Serial.println("Pausing for expand movement");
-		  delay(1500);             // wait for the feet to move
-          Serial.println("Deativating Spread Servos");
-		  ServoFLSpread.detach();  // Disable the spread servos (to save power)
-          ServoFRSpread.detach();
-          ServoBRSpread.detach();
-		  ServoBLSpread.detach();
-
-
 	}
 	// L2 + Right 
 	if(!myPS3->getButtonPress(L1) && myPS3->getButtonPress(L2) && myPS3->getButtonClick(RIGHT))
@@ -858,24 +876,13 @@ void ps3ToggleSettings(PS3BT* myPS3 = PS3Nav)
           //Serial.print(FRSpread);
           //Serial.print(" BL:");
           //Serial.println(BLSpread);
-		  Serial.println("Activating Spread Servos");
-		  ServoFLSpread.attach(PinFLSpread);  // Enable the spread servos
-          ServoFRSpread.attach(PinFRSpread);
-          ServoBRSpread.attach(PinBRSpread);
-		  ServoBLSpread.attach(PinBLSpread);
-		  Serial.println("Moving Spread Servos");
+		  //Serial.println("Activating Spread Servos");
+		  FootServoPowerUp();
+		  //Serial.println("Moving Spread Servos");
           ServoFLSpread.writeMicroseconds(FLSpreadMax);  // Move the spread servos
           ServoBRSpread.writeMicroseconds(BRSpreadMax);
           ServoFRSpread.writeMicroseconds(FRSpreadMin);
           ServoBLSpread.writeMicroseconds(BLSpreadMin);
-		  Serial.println("Pausing for contract movement");
-		  delay(1500);             // wait for the feet to move
-          Serial.println("Deativating Spread Servos");
-		  ServoFLSpread.detach();  // Disable the spread servos (to save power)
-          ServoFRSpread.detach();
-          ServoBRSpread.detach();
-		  ServoBLSpread.detach();
-
 	}
 	// L2 + Circle 
 	if(!myPS3->getButtonPress(L1) && myPS3->getButtonPress(L2) && myPS3->getButtonClick(CIRCLE))
@@ -932,16 +939,19 @@ void ps3ToggleSettings(PS3BT* myPS3 = PS3Nav)
 	{
 	}
 
-// =======================================================================================
+// =======================================================================================red
 // Arrow Controls
 // =======================================================================================
 	// Up - 
 	if (PS3Nav->getButtonClick(UP) && !PS3Nav->getButtonPress(CROSS) && !PS3Nav->getButtonPress(CIRCLE) && !PS3Nav->getButtonPress(L1) && !PS3Nav->getButtonPress(L2) && !PS3Nav->getButtonPress(PS)) {
-	myDFPlayer.play(12);
+	myDFPlayer.play(2);
 	}
 	// Down  - 
 	if (PS3Nav->getButtonClick(DOWN) && !PS3Nav->getButtonPress(CROSS) && !PS3Nav->getButtonPress(CIRCLE) && !PS3Nav->getButtonPress(L1) && !PS3Nav->getButtonPress(L2) && !PS3Nav->getButtonPress(PS)) {
-	myDFPlayer.play(2);
+	myDFPlayer.play(12);
+	animationTrigger=0;
+	soundNum=0;
+	relax();
 	}
 	// Left - 
 	if (PS3Nav->getButtonClick(LEFT) && !PS3Nav->getButtonPress(CROSS) && !PS3Nav->getButtonPress(CIRCLE) && !PS3Nav->getButtonPress(L1) && !PS3Nav->getButtonPress(L2) && !PS3Nav->getButtonPress(PS)) {
@@ -962,43 +972,45 @@ void toggleSettings()
 	if (PS3Nav->PS3NavigationConnected) ps3ToggleSettings(PS3Nav);
 }
 
-void FootServoAttach()
+void FootServoPowerUp()
 {
-    if (footServosAttached == false)
+    if (footServosPowered == false)
 	{
-	ServoFLHeight.attach(PinFLHeight);
-    ServoFRHeight.attach(PinFRHeight);
-    ServoBRHeight.attach(PinBRHeight);
-    ServoBLHeight.attach(PinBLHeight);
-	footServosAttached = true;
+	digitalWrite(Pin1FeetServoAttached, HIGH);
+	delay(100);
+	digitalWrite(Pin2FeetServoAttached, HIGH);
+	footServosPowered = true;
 	}
 	footServoMillis = currentMillis;
-	//Serial.print("Foot Height Servos Attached, Timer: ");
-	Serial.println(footServoMillis-currentMillis);
+	Serial.println("Foot Height Servos Attached");
 }
  
-void footServoDetach()
+void footServoPowerDown()
 {
-	if (footServosAttached == true)   // disconnects servos & middles after 5000 ms of inactivity
+	if (footServosPowered == true)   // disconnects servos & middles after 10 seconds of inactivity
 	{
-   	   if (currentMillis - footServoMillis > 5000)
+   	   if (currentMillis - footServoMillis > 10000)
 	   {
+		FLSpread = (FLSpreadMin + FLSpreadMax)/2;
+		FRSpread = (FRSpreadMin + FRSpreadMax)/2;
+		BRSpread = (BRSpreadMin + BRSpreadMax)/2;
+		BLSpread = (BLSpreadMin + BLSpreadMax)/2;
 		FLHeight = (FLHeightMin + FLHeightMax)/2;
 		FRHeight = (FRHeightMin + FRHeightMax)/2;
 		BRHeight = (BRHeightMin + BRHeightMax)/2;
 		BLHeight = (BLHeightMin + BLHeightMax)/2;
-        ServoFLHeight.writeMicroseconds(FLHeight);
-        ServoFRHeight.writeMicroseconds(FRHeight);
-        ServoBRHeight.writeMicroseconds(BRHeight);
-    	ServoBLHeight.writeMicroseconds(BLHeight);
-		delay(1000);
-		ServoFLHeight.detach();
-   		ServoFRHeight.detach();
-   		ServoBRHeight.detach();
-   		ServoBLHeight.detach();
-	   footServosAttached = false;
-	   //Serial.println("Foot Height Servos Detached");
+	    ServoFLSpread.writeMicroseconds(FLSpread);  // Move the spread servos
+        ServoBRSpread.writeMicroseconds(BRSpread);
+        ServoFRSpread.writeMicroseconds(FRSpread);
+        ServoBLSpread.writeMicroseconds(BLSpread);
+		delay(500);
+		footServosPowered = false;
+		digitalWrite(Pin1FeetServoAttached, LOW);  // Disables power to feet servos
+		digitalWrite(Pin2FeetServoAttached, LOW);  // Disables power to feet servos
+		//Serial.println("Foot Height Servos Detached and values reset");
 	   }
+	//Serial.print("Foot Height Servos Countdown Timer: ");
+	//Serial.println(currentMillis - footServoMillis);
     }
 }
 
@@ -1042,45 +1054,226 @@ void animationSounds()     // to be replaced with routine
 		soundprevmillis = soundcurrentmillis;
 		soundNum =1;
 	}
-	    Serial.println("Animation Sound: ");
-		Serial.println(soundNum);
+	    //Serial.println("Animation Sound: ");
+		//Serial.println(soundNum);
 }
 
-void animationLow()  // to be replaced with routines - idea is to create building blocks and call them here in order
+void animations()   //Loops through the possible routines and triggers them set, executes one granular move until the animation is complete and the trigger reset
 {
-   // if not expanded to full, expand to full
-   // if not head raised, raise head
-   // look left
-   // look forward
-   // look left slowly
-   // look forward
-   // look right
-   // look all the way right slowly
-   // back to center slowly
-   // tilt head around
-   // say casa
-   // look down
-   // look up
-   // level head
-   // tuck head in
-   // wait a bit
-   // start loop again
-   
+centerHead();
+levelHead();
+tiltHeadUp();
+tiltHeadDown();
+tiltHeadLeft();
+tiltHeadRight();
+raiseHead();
+midHead();
+lowerHead();
+expandBody();  
+tuckInBody();
+turnHead();
+delay(1);          // very small delay added in to slow animations
+}
+
+// =======================================================================================
+// Animation Routines
+// =======================================================================================
+	//***Body triggers***  BodyExpandTrigger=1;  BodyTuckInTrigger=1;
+	//***Head Z***   /HeadUpTrigger=1; HeadMidTrigger=1; HeadDownTrigger=1; 
+	//***head triggers***  CenterHeadTrigger=1; LevelHeadTrigger=1; TiltHeadUpTrigger=1; TiltHeadDownTrigger=1; TiltHeadLeftTrigger=1; TiltHeadRightTrigger=1;
+	//                     TurnHeadTrigger=1; + turnAmount=amount; 
+	//***ring subroutines***  spinTRBR(Delay); spinTLBL(Delay);  spinTLBR(Delay); spinTRBL(Delay); wobble (delay);
+
+void animation1() 
+{
+	animatecurrentmillis = millis();  // update timer
+	animateTimer = animatecurrentmillis - animateprevmillis;
+	if (animateTimer > animateDelay && animationStep == 1)
+	{
+		//What to trigger for this step
+		BodyExpandTrigger=1;
+		HeadUpTrigger=1;
+		CenterHeadTrigger=1;
+		secondsInAnimation = 5; // How long should it take
+		animationStep++;        // This increments the step
+		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+
+	}
+	if (animateTimer > animateDelay && animationStep == 2)
+	{ 
+		TiltHeadUpTrigger=1;
+		secondsInAnimation = 2; // How long should it take
+		animationStep++;        // This increments the step
+		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+	}
+	if (animateTimer > animateDelay && animationStep == 3)
+	{ 
+		TiltHeadLeftTrigger=1;
+		secondsInAnimation = 1; // How long should it take
+		animationStep++;        // This increments the step
+		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		
+	}
+	if (animateTimer > animateDelay && animationStep == 4)
+	{ 
+		LevelHeadTrigger=1;
+		spinTRBL(400);
+		secondsInAnimation = 3; // How long should it take
+		animationStep++;        // This increments the step
+		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+	}
+	if (animateTimer > animateDelay && animationStep == 5)
+	{ 
+		turnAmount=1300;
+		TiltHeadUpTrigger=1;
+		TurnHeadTrigger=1;
+		secondsInAnimation = 2; // How long should it take
+		animationStep++;        // This increments the step
+		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+	}
+	if (animateTimer > animateDelay && animationStep == 6)
+	{ 
+		turnAmount=1700;
+		TurnHeadTrigger=1;
+		secondsInAnimation = 3; // How long should it take
+		animationStep++;        // This increments the step
+		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+	}
+	if (animateTimer > animateDelay && animationStep == 7)
+	{ 
+		turnAmount=1600;
+		TurnHeadTrigger=1;
+		TiltHeadLeftTrigger=1;
+		secondsInAnimation = 3; // How long should it take
+		animationStep++;        // This increments the step
+		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+	}
+	if (animateTimer > animateDelay && animationStep == 8)
+	{ 
+		turnAmount=1700;
+		TurnHeadTrigger=1;
+		TiltHeadRightTrigger=1;
+		secondsInAnimation = 3; // How long should it take
+		animationStep++;        // This increments the step
+		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+	}
+	if (animateTimer > animateDelay && animationStep == 9)
+	{ 
+		turnAmount=1300;
+		TurnHeadTrigger=1;
+		secondsInAnimation = 3; // How long should it take
+		animationStep++;        // This increments the step
+		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+	}
+	if (animateTimer > animateDelay && animationStep == 10)
+	{ 
+		//BodyTuckInTrigger=1;
+		CenterHeadTrigger=1;
+		secondsInAnimation = 4; // How long should it take
+		animationStep++;        // This increments the step
+		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+	}
+	if (animateTimer > animateDelay && animationStep == 11)
+	{ 
+		TiltHeadUpTrigger=1;
+		secondsInAnimation = 5; // How long should it take
+		animationStep++;        // This increments the step
+		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+	}
+	if (animateTimer > animateDelay && animationStep == 12)
+	{ 
+		LevelHeadTrigger=1;
+		turnAmount=1400;
+		TurnHeadTrigger=1;
+		HeadMidTrigger=1;
+		secondsInAnimation = 4; // How long should it take
+		animationStep++;        // This increments the step
+		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+	}
+	if (animateTimer > animateDelay && animationStep == 13)
+	{ 
+		turnAmount=1500;
+		TurnHeadTrigger=1;
+		HeadUpTrigger=1;
+		secondsInAnimation = 2; // How long should it take
+		animationStep++;        // This increments the step
+		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+	}
+	if (animateTimer > animateDelay && animationStep == 14)
+	{ 
+		turnAmount=1600;
+		TurnHeadTrigger=1;
+		TiltHeadLeftTrigger=1;
+		secondsInAnimation = 2; // How long should it take
+		animationStep++;        // This increments the step
+		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+	}
+	if (animateTimer > animateDelay && animationStep == 15)
+	{ 
+		turnAmount=1700;
+		TurnHeadTrigger=1;
+		TiltHeadRightTrigger=1;
+		secondsInAnimation = 10; // How long should it take
+		animationStep++;        // This increments the step
+		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+	}
+	if (animateTimer > animateDelay && animationStep == 16)
+	{ 
+		HeadMidTrigger=1;
+		secondsInAnimation = 2; // How long should it take
+		animationStep++;        // This increments the step
+		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+	}
+	if (animateTimer > animateDelay && animationStep == 17)
+	{ 
+		HeadUpTrigger=1;
+		secondsInAnimation = 2; // How long should it take
+		animationStep++;        // This increments the step
+		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+	}
+	if (animateTimer > animateDelay && animationStep == 18)
+	{ 
+		HeadMidTrigger=1;
+		secondsInAnimation = 2; // How long should it take
+		animationStep++;        // This increments the step
+		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+	}
+	if (animateTimer > animateDelay && animationStep == 19)
+	{ 
+		turnAmount=1700;
+		TurnHeadTrigger=1;
+		secondsInAnimation = 8; // How long should it take
+		animationStep++;        // This increments the step
+		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+	}
+	if (animateTimer > animateDelay && animationStep == 20)
+	{
+		animationStep=1;
+		LevelHeadTrigger=1;
+		CenterHeadTrigger=1;
+		BodyTuckInTrigger=1;
+		HeadDownTrigger=1;
+		secondsInAnimation = 5;
+		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		animateprevmillis = animatecurrentmillis;
+	}
+	if (animationStep > 20) {animationStep=1;}
    //Serial.println("Animation Low");
 }
+	
 
-void animationHigh()   // to be replaced with routines - idea is to create building blocks and call them here in order
+void animation2()   // to be replaced with routines - idea is to create building blocks and call them here in order
 {
 	// if not expanded to full, expand to full
-	// if not head raised, raise head
+	// if not Head raised, raise Head
 	// timer - look left
 	// look more left slowly
 	// slowly back to center
 	// say something
 	// timer - look right
-	// time  - tilt head some direction
+	// time  - tilt Head some direction
 	// timer - look more right
-	// time  - tilt head more direction
+	// time  - tilt Head more direction
 	// timer - look forward
 	// spin rings and make a sound
 	// timer - lower a half
@@ -1092,307 +1285,373 @@ void animationHigh()   // to be replaced with routines - idea is to create build
 	// tilt backward and look forward and up
 	// say casa, casa, i miss marva
 	// wait a short while then tuck in
-    animationRelaxed(); // relax
+    relax(); // relax
 	// wait a while
 	// start loop again
 
 	//Serial.println("Animation High");
 }
 
+
+
+void turnHead()
+{
+	if (TurnHeadTrigger) {
+	if (HeadT < turnAmount) { 
+		HeadT++; 
+		ServoHeadT.writeMicroseconds(HeadT);   // loop HeadT to deg
+		}
+	if (HeadT > turnAmount) {
+		HeadT--;
+		ServoHeadT.writeMicroseconds(HeadT);   // loop HeadT to deg
+		}
+	if (HeadT == turnAmount) {TurnHeadTrigger=false;}
+	Serial.print ("Turning Head to: ");
+    Serial.println (turnAmount);
+}
+}
+
 void centerHead()
 {
+  if (CenterHeadTrigger) {
 	if (HeadT < HeadTCenter) { 
-		for (int i=HeadT; i<HeadTCenter; i++) {
-		ServoHeadT.writeMicroseconds(i);   // loop HeadT to to center
+		HeadT++;
+		ServoHeadT.writeMicroseconds(HeadT);   // loop HeadT to center
 		}
-	} else {
-		for (int i=HeadT; HeadTCenter<i; i--) {
-		ServoHeadT.writeMicroseconds(i);   // loop HeadT to center
+	if (HeadT > HeadTCenter) {
+		HeadT--;
+		ServoHeadT.writeMicroseconds(HeadT);   // loop HeadT to center
 		}
-	}
-	HeadT = HeadTCenter;
-	ServoHeadT.writeMicroseconds(HeadT);
-}
-
-void centerHeadSlow()
-{
-	if (HeadT < HeadTCenter) { 
-		for (int i=HeadT; i<HeadTCenter; i++) {
-		ServoHeadT.writeMicroseconds(i);   // loop HeadT to to center
-		delay(5);
-		}
-	} else {
-		for (int i=HeadT; HeadTCenter<i; i--) {
-		ServoHeadT.writeMicroseconds(i);   // loop HeadT to center
-		delay(5);
-		}
-	}
-	HeadT = HeadTCenter;
-	ServoHeadT.writeMicroseconds(HeadT);
-}
-
-void centerHeadMed()
-{
-	if (HeadT < HeadTCenter) { 
-		for (int i=HeadT; i<HeadTCenter; i++) {
-		ServoHeadT.writeMicroseconds(i);   // loop HeadT to to center
-		delay(1);
-		}
-	} else {
-		for (int i=HeadT; HeadTCenter<i; i--) {
-		ServoHeadT.writeMicroseconds(i);   // loop HeadT to center
-		delay(1);
-		}
-	}
-	HeadT = HeadTCenter;
-	ServoHeadT.writeMicroseconds(HeadT);
+	 if (HeadT == HeadTCenter) {CenterHeadTrigger=false;}
+	 	Serial.println ("Centering Head");
+  }
 }
 
 void levelHead()
 {
-	if (HeadL < HeadLCenter) { 
-		for (int i=HeadL; i<HeadLCenter; i++) {
-		ServoHeadL.writeMicroseconds(i);   // loop HeadT to to center
-		}
-	} else {
-		for (int i=HeadL; HeadLCenter<i; i--) {
-		ServoHeadL.writeMicroseconds(i);   // loop HeadT to center
-		}
+  if (LevelHeadTrigger) {
+	TiltHeadUpTrigger=0;
+	TiltHeadDownTrigger=0;
+	TiltHeadLeftTrigger=0;
+	TiltHeadRightTrigger=0;
+	if (HeadRight < HeadRightCenter) {
+	HeadRight++;
+	ServoHeadRight.writeMicroseconds(HeadRight);   // loop HeadRight to center
 	}
-	HeadL = HeadLCenter;
-	ServoHeadL.writeMicroseconds(HeadL);
-
-	if (HeadR < HeadRCenter) { 
-		for (int i=HeadR; i<HeadRCenter; i++) {
-		ServoHeadR.writeMicroseconds(i);   // loop HeadT to to center
-		}
-	} else {
-		for (int i=HeadR; HeadRCenter<i; i--) {
-		ServoHeadR.writeMicroseconds(i);   // loop HeadT to center
-		}
+	if (HeadRight > HeadRightCenter) {
+	HeadRight--;
+    ServoHeadRight.writeMicroseconds(HeadRight);   // loop HeadRight to center
 	}
-	HeadR = HeadRCenter;
-	ServoHeadR.writeMicroseconds(HeadR);
+	if (HeadLeft < HeadLeftCenter) { 
+	HeadLeft++; 
+	ServoHeadLeft.writeMicroseconds(HeadLeft);   // loop HeadLeft to center
+	}
+	if (HeadLeft > HeadLeftCenter) {
+	HeadLeft--;
+	ServoHeadLeft.writeMicroseconds(HeadLeft);   // loop HeadLeft to center
+	}
+	if ((HeadLeft == HeadLeftCenter) && (HeadRight == HeadRightCenter)) {LevelHeadTrigger=false;}
+	Serial.println ("Leveling Head");
+  }
 }
 
-void levelHeadMed()
+void tiltHeadUp()
 {
-	if (HeadL < HeadLCenter) { 
-		for (int i=HeadL; i<HeadLCenter; i++) {
-		ServoHeadL.writeMicroseconds(i);   // loop HeadT to to center
-		delay(1);
-		}
-	} else {
-		for (int i=HeadL; HeadLCenter<i; i--) {
-		ServoHeadL.writeMicroseconds(i);   // loop HeadT to center
-		delay(1);
-		}
+  if (TiltHeadUpTrigger) {
+	LevelHeadTrigger=0;
+	TiltHeadDownTrigger=0;
+	TiltHeadLeftTrigger=0;
+	TiltHeadRightTrigger=0;
+	if (HeadRight > HeadRightMin) {	
+	HeadRight--;
+	ServoHeadRight.writeMicroseconds(HeadRight);   // loop HeadRight to HeadRightMin
 	}
-	HeadL = HeadLCenter;
-	ServoHeadL.writeMicroseconds(HeadL);
-
-	if (HeadR < HeadRCenter) { 
-		for (int i=HeadR; i<HeadRCenter; i++) {
-		ServoHeadR.writeMicroseconds(i);   // loop HeadT to to center
-		delay(1);
-		}
-	} else {
-		for (int i=HeadR; HeadRCenter<i; i--) {
-		ServoHeadR.writeMicroseconds(i);   // loop HeadT to center
-		delay(1);
-		}
+	if (HeadLeft < HeadLeftMax) {
+	HeadLeft++;
+	ServoHeadLeft.writeMicroseconds(HeadLeft);   // loop HeadLeft to HeadLeftMax
 	}
-	HeadR = HeadRCenter;
-	ServoHeadR.writeMicroseconds(HeadR);
+	if ((HeadLeft == HeadLeftMax) && (HeadRight == HeadRightMin)) {TiltHeadUpTrigger=false;}
+	Serial.println ("Tilting Head Up");
+  }
 }
 
-void levelHeadSlow()
+void tiltHeadDown()
 {
-	if (HeadL < HeadLCenter) { 
-		for (int i=HeadL; i<HeadLCenter; i++) {
-		ServoHeadL.writeMicroseconds(i);   // loop HeadT to to center
-		delay(5);
-		}
-	} else {
-		for (int i=HeadL; HeadLCenter<i; i--) {
-		ServoHeadL.writeMicroseconds(i);   // loop HeadT to center
-		delay(5);
-		}
+  if (TiltHeadDownTrigger) {
+	LevelHeadTrigger=0;
+	TiltHeadUpTrigger=0;
+	TiltHeadLeftTrigger=0;
+	TiltHeadRightTrigger=0;
+	if (HeadRight < HeadRightMax) {
+	HeadRight++;
+	ServoHeadRight.writeMicroseconds(HeadRight);   // loop HeadRight to HeadRightMax
 	}
-	HeadL = HeadLCenter;
-	ServoHeadL.writeMicroseconds(HeadL);
-
-	if (HeadR < HeadRCenter) { 
-		for (int i=HeadR; i<HeadRCenter; i++) {
-		ServoHeadR.writeMicroseconds(i);   // loop HeadT to to center
-		delay(5);
-		}
-	} else {
-		for (int i=HeadR; HeadRCenter<i; i--) {
-		ServoHeadR.writeMicroseconds(i);   // loop HeadT to center
-		}delay(5);
-
+	if (HeadLeft > HeadLeftMin) {
+	HeadLeft--;
+	ServoHeadLeft.writeMicroseconds(HeadLeft);   // loop HeadLeft to HeadLeftMin
 	}
-	HeadR = HeadRCenter;
-	ServoHeadR.writeMicroseconds(HeadR);
+	if ((HeadLeft == HeadLeftMin) && (HeadRight == HeadRightMax)) {TiltHeadDownTrigger=false;}
+	Serial.println ("Tilting Head Down");
+  }
 }
 
-void raiseHead()
+void tiltHeadLeft()
 {
-	for (int i=HeadZ; HeadZMin<i; i--) {
-	ServoHeadZ.writeMicroseconds(i);   // loop head Z to to min value (opened)
+	if (TiltHeadLeftTrigger) {
+	LevelHeadTrigger=0;
+	TiltHeadUpTrigger=0;
+	TiltHeadDownTrigger=0;
+	TiltHeadRightTrigger=0;
+	if (HeadRight < HeadRightMax) {
+	HeadRight++;
+	ServoHeadRight.writeMicroseconds(HeadRight);   // loop HeadRight to HeadRightMax
 	}
-	HeadZ = HeadZMin;
+	if (HeadLeft < HeadLeftMax) {
+	HeadLeft++;
+	ServoHeadLeft.writeMicroseconds(HeadLeft);   // loop HeadLeft to HeadLeftMin
+	}
+	if ((HeadLeft == HeadLeftMax) && (HeadRight == HeadRightMax)) {TiltHeadLeftTrigger=false;}
+	Serial.println ("Tilting Head Left");
+  }
 }
 
-void raiseHeadMed()
+void tiltHeadRight()
 {
-	for (int i=HeadZ; HeadZMin<i; i--) {
-	ServoHeadZ.writeMicroseconds(i);   // loop head Z to to min value (opened)
-	delay(1);
+  if (TiltHeadRightTrigger) {
+	LevelHeadTrigger=0;
+	TiltHeadUpTrigger=0;
+	TiltHeadDownTrigger=0;
+	TiltHeadLeftTrigger=0;
+	if (HeadRight > HeadRightMin) {
+	HeadRight--;
+	ServoHeadRight.writeMicroseconds(HeadRight);   // loop HeadRight to HeadRightMax
 	}
-	HeadZ = HeadZMin;
+	if (HeadLeft > HeadLeftMin) {
+	HeadLeft--;
+	ServoHeadLeft.writeMicroseconds(HeadLeft);   // loop HeadLeft to HeadLeftMin
+	}
+	if ((HeadLeft == HeadLeftMin) && (HeadRight == HeadRightMin)) {TiltHeadRightTrigger=false;}
+	Serial.println ("Tilting Head Right");
+  }
 }
 
-void raiseHeadSlow()
+void raiseHead()  // min value is up in this case
 {
-	for (int i=HeadZ; HeadZMin<i; i--) {
-	ServoHeadZ.writeMicroseconds(i);   // loop head Z to to min value (opened)
-	delay(5);
+	if (HeadUpTrigger) {
+	if (HeadZ > HeadZMin) {
+	HeadZ--;
+	ServoHeadZ.writeMicroseconds(HeadZ);   // loop Head Z to to min value (opened)
 	}
-	HeadZ = HeadZMin;
+	if (HeadZ == HeadZMin) {HeadUpTrigger=false;}
+	Serial.println ("Rasing Head Up");
+	}
 }
 
-void lowerHead()
+void midHead()
 {
-	for (int i=HeadZ; i<HeadZMax; i++) {
-	ServoHeadZ.writeMicroseconds(i);   // loop head Z to to max value (closed)
+    if (HeadMidTrigger) {
+	if (HeadZ < HeadZMid) { 
+	HeadZ++;
+	ServoHeadZ.writeMicroseconds(HeadZ);   // loop HeadZ to HeadZMid
 	}
-	HeadZ = HeadZMax;
+	if (HeadZ > HeadZMid) {
+	HeadZ--;
+	}
+	if (HeadZ == HeadZMid) {HeadMidTrigger=false;}
+	Serial.println ("Head to Middle");
+	}
 }
 
-void lowerHeadMed()
+void lowerHead()  // max values is down in this case
 {
-	for (int i=HeadZ; i<HeadZMax; i++) {
-	ServoHeadZ.writeMicroseconds(i);   // loop head Z to to max value (closed)
-	delay(1);
+	if (HeadDownTrigger) {
+	if (HeadZ < HeadZMax) {
+	HeadZ++;
+	ServoHeadZ.writeMicroseconds(HeadZ);   // loop Head Z to to min value (opened)
 	}
-	HeadZ = HeadZMax;
-}
-
-void lowerHeadSlow()
-{
-	for (int i=HeadZ; i<HeadZMax; i++) {
-	ServoHeadZ.writeMicroseconds(i);   // loop head Z to to max value (closed)
-	delay(5);
+	if (HeadZ == HeadZMax) {HeadDownTrigger=false;}
+	Serial.println ("Lowering Head Down");
 	}
-	HeadZ = HeadZMax;
 }
 
 
 void tuckInBody()   // to be replaced with routine
-{
-    Serial.println("Tuck In");
-	myDFPlayer.play(11);
-	for (int i=BodyZ2; i<BodyZ2Max; i++) {
-	ServoBodyZ2.writeMicroseconds(i);   // loop body z2 to to max value (closed)
+{   
+	if (BodyTuckInTrigger) {
+    if (BodyZ2 < BodyZ2Max) {
+	BodyZ2++;
+	ServoBodyZ2.writeMicroseconds(BodyZ2);   // loop body z2 to to max value (closed)
 	}
-	for (int i=BodyZ1; BodyZ1Min<i; i--) {
-	ServoBodyZ1.writeMicroseconds(i);   // loop body z1 to min (closed)
+	if (BodyZ1 > BodyZ1Min) {
+		BodyZ1--;
+	ServoBodyZ1.writeMicroseconds(BodyZ1);   // loop body z1 to min (closed)
 	}
-	BodyZ1 = BodyZ1Min;
-	BodyZ2 = BodyZ2Max;
-}
-
-void tuckInBodyMed()   // to be replaced with routine
-{
-    Serial.println("Tuck In");
-	myDFPlayer.play(11);
-	for (int i=BodyZ2; i<BodyZ2Max; i++) {
-	ServoBodyZ2.writeMicroseconds(i);   // loop body z2 to to max value (closed)
-	delay(1);
-	}
-	for (int i=BodyZ1; BodyZ1Min<i; i--) {
-	ServoBodyZ1.writeMicroseconds(i);   // loop body z1 to min (closed)
-	delay(1);
-	}
-	BodyZ1 = BodyZ1Min;
-	BodyZ2 = BodyZ2Max;
-}
-
-void tuckInBodySlow()   // to be replaced with routine
-{
-    Serial.println("Tuck In");
-	myDFPlayer.play(11);
-	for (int i=BodyZ2; i<BodyZ2Max; i++) {
-	ServoBodyZ2.writeMicroseconds(i);   // loop body z2 to to max value (closed)
-	delay(5);
-	}
-	for (int i=BodyZ1; BodyZ1Min<i; i--) {
-	ServoBodyZ1.writeMicroseconds(i);   // loop body z1 to min (closed)
-	delay(5);
-	}
-	BodyZ1 = BodyZ1Min;
-	BodyZ2 = BodyZ2Max;
+	if ((BodyZ1 == BodyZ1Min) && (BodyZ2 == BodyZ2Max)) {BodyTuckInTrigger=false;}
+	Serial.println ("Tucking in body");
+    }
 }
 
 void expandBody()   // to be replaced with routine
 {
-	Serial.println("Expand");
-	for (int i=BodyZ1; i<BodyZ1Max; i++) {
-	ServoBodyZ1.writeMicroseconds(i);   // loop body z2 to to max value (opened)
+	//Serial.println("Expand");
+	if (BodyExpandTrigger) {
+    if (BodyZ2 > BodyZ2Min) {
+		BodyZ2--;
+		ServoBodyZ2.writeMicroseconds(BodyZ2);   // loop body z2 to to max value (closed)
+	}
+	if (BodyZ1 < BodyZ1Max) {
+		BodyZ1++;
+		ServoBodyZ1.writeMicroseconds(BodyZ1);   // loop body z1 to min (closed)
+	}
+	if ((BodyZ1 == BodyZ1Max) && (BodyZ2 == BodyZ2Min)) {BodyExpandTrigger=false;}
+	Serial.println ("Expanding Body");
     }
-	for (int i=BodyZ2; BodyZ2Min<i; i--) {
-	ServoBodyZ2.writeMicroseconds(i);   // loop body z1 to min (opened)
-	}
-	BodyZ1 = BodyZ1Max;
-	BodyZ2 = BodyZ2Min;
-	myDFPlayer.play(11);    
 }
 
-void expandBodyMed()   // to be replaced with routine
-{
-	Serial.println("Expand");
-	for (int i=BodyZ1; i<BodyZ1Max; i++) {
-	ServoBodyZ1.writeMicroseconds(i);   // loop body z2 to to max value (opened)
-    delay(1);
-	}
-	for (int i=BodyZ2; BodyZ2Min<i; i--) {
-	ServoBodyZ2.writeMicroseconds(i);   // loop body z1 to min (opened)
-	}delay(1);
-
-	BodyZ1 = BodyZ1Max;
-	BodyZ2 = BodyZ2Min;
-	myDFPlayer.play(11);    
+void wobble(int speedDelay)
+{  
+	Serial.println ("Wobble rings");
+	myDFPlayer.play(4);
+    digitalWrite(PinUpperMotorA, LOW);
+    digitalWrite(PinUpperMotorB, HIGH);
+    digitalWrite(PinLowerMotorA, LOW);
+    digitalWrite(PinLowerMotorB, HIGH);
+    delay(speedDelay);
+	digitalWrite(PinUpperMotorA, HIGH);
+    digitalWrite(PinUpperMotorB, LOW);
+    digitalWrite(PinLowerMotorA, HIGH);
+    digitalWrite(PinLowerMotorB, LOW);
+    delay(speedDelay);
+	digitalWrite(PinUpperMotorA, LOW);
+    digitalWrite(PinUpperMotorB, HIGH);
+    digitalWrite(PinLowerMotorA, LOW);
+    digitalWrite(PinLowerMotorB, HIGH);
+    delay(speedDelay);
+	digitalWrite(PinUpperMotorA, HIGH);
+    digitalWrite(PinUpperMotorB, LOW);
+    digitalWrite(PinLowerMotorA, HIGH);
+    digitalWrite(PinLowerMotorB, LOW);
+    delay(speedDelay);
+    digitalWrite(PinUpperMotorA, LOW);
+    digitalWrite(PinUpperMotorB, HIGH);
+    digitalWrite(PinLowerMotorA, LOW);
+    digitalWrite(PinLowerMotorB, HIGH);
+    delay(speedDelay);
+	digitalWrite(PinUpperMotorA, HIGH);
+    digitalWrite(PinUpperMotorB, LOW);
+    digitalWrite(PinLowerMotorA, HIGH);
+    digitalWrite(PinLowerMotorB, LOW);
+    delay(speedDelay);
+	digitalWrite(PinUpperMotorA, LOW);
+    digitalWrite(PinUpperMotorB, HIGH);
+    digitalWrite(PinLowerMotorA, LOW);
+    digitalWrite(PinLowerMotorB, HIGH);
+    delay(speedDelay);
+	digitalWrite(PinUpperMotorA, HIGH);
+    digitalWrite(PinUpperMotorB, LOW);
+    digitalWrite(PinLowerMotorA, HIGH);
+    digitalWrite(PinLowerMotorB, LOW);
+    delay(speedDelay);
+	digitalWrite(PinUpperMotorA, LOW);
+    digitalWrite(PinUpperMotorB, HIGH);
+    digitalWrite(PinLowerMotorA, LOW);
+    digitalWrite(PinLowerMotorB, HIGH);
+    delay(speedDelay);
+	digitalWrite(PinUpperMotorA, HIGH);
+    digitalWrite(PinUpperMotorB, LOW);
+    digitalWrite(PinLowerMotorA, HIGH);
+    digitalWrite(PinLowerMotorB, LOW);
+    delay(speedDelay);
+    digitalWrite(PinUpperMotorA, LOW);
+    digitalWrite(PinUpperMotorB, HIGH);
+    digitalWrite(PinLowerMotorA, LOW);
+    digitalWrite(PinLowerMotorB, HIGH);
+    delay(speedDelay);
+	digitalWrite(PinUpperMotorA, HIGH);
+    digitalWrite(PinUpperMotorB, LOW);
+    digitalWrite(PinLowerMotorA, HIGH);
+    digitalWrite(PinLowerMotorB, LOW);
+    delay(speedDelay);
+    digitalWrite(PinUpperMotorA, HIGH);
+    digitalWrite(PinUpperMotorB, HIGH);
+    digitalWrite(PinLowerMotorA, HIGH);
+    digitalWrite(PinLowerMotorB, HIGH);
 }
 
-void expandBodySlow()   // to be replaced with routine
-{
-	Serial.println("Expand");
-	for (int i=BodyZ1; i<BodyZ1Max; i++) {
-	ServoBodyZ1.writeMicroseconds(i);   // loop body z2 to to max value (opened)
-    delay(5);
-	}
-	for (int i=BodyZ2; BodyZ2Min<i; i--) {
-	ServoBodyZ2.writeMicroseconds(i);   // loop body z1 to min (opened)
-	delay(5);
-	}
-	BodyZ1 = BodyZ1Max;
-	BodyZ2 = BodyZ2Min;
-	myDFPlayer.play(11);    
+
+void spinTRBR(int speedDelay) //
+{  
+    digitalWrite(PinUpperMotorA, HIGH);
+    digitalWrite(PinUpperMotorB, LOW);
+    digitalWrite(PinLowerMotorA, HIGH);
+    digitalWrite(PinLowerMotorB, LOW);
+    //Serial.println ("Top Right, Bottom Right");
+	delay(speedDelay);
+    digitalWrite(PinUpperMotorA, HIGH);
+    digitalWrite(PinUpperMotorB, HIGH);
+    digitalWrite(PinLowerMotorA, HIGH);
+    digitalWrite(PinLowerMotorB, HIGH);
+	
 }
 
-void animationRelaxed()   // Move all positions to the middle of the extents
+void spinTLBL(int speedDelay) //
+{ 
+    digitalWrite(PinUpperMotorA, LOW);
+    digitalWrite(PinUpperMotorB, HIGH);
+    digitalWrite(PinLowerMotorA, LOW);
+    digitalWrite(PinLowerMotorB, HIGH);
+    //Serial.println ("Top Left, Bottom Left");
+	delay(speedDelay);
+    digitalWrite(PinUpperMotorA, HIGH);
+    digitalWrite(PinUpperMotorB, HIGH);
+    digitalWrite(PinLowerMotorA, HIGH);
+    digitalWrite(PinLowerMotorB, HIGH);
+	
+}
+
+void spinTLBR(int speedDelay) //
+{ 
+    digitalWrite(PinUpperMotorA, HIGH);
+    digitalWrite(PinUpperMotorB, LOW);
+    digitalWrite(PinLowerMotorA, LOW);
+    digitalWrite(PinLowerMotorB, HIGH);
+    //Serial.println ("Top Left, Bottom Right");
+	delay(speedDelay);
+    digitalWrite(PinUpperMotorA, HIGH);
+    digitalWrite(PinUpperMotorB, HIGH);
+    digitalWrite(PinLowerMotorA, HIGH);
+    digitalWrite(PinLowerMotorB, HIGH);
+	
+}
+
+void spinTRBL(int speedDelay) //
+{ 
+	digitalWrite(PinUpperMotorA, LOW);
+    digitalWrite(PinUpperMotorB, HIGH);
+    digitalWrite(PinLowerMotorA, HIGH);
+    digitalWrite(PinLowerMotorB, LOW);
+    //Serial.println ("Top Right, Bottom Left");
+	delay(speedDelay);
+    digitalWrite(PinUpperMotorA, HIGH);
+    digitalWrite(PinUpperMotorB, HIGH);
+    digitalWrite(PinLowerMotorA, HIGH);
+    digitalWrite(PinLowerMotorB, HIGH);
+	
+}
+
+void relax()   // Move all positions to the middle of the extents
 {
-	Drive = 1500;
-	Rotate = 1500;
-	Strafe = 1500;
-	HeadL = HeadLCenter;
-	HeadR = HeadRCenter;
-	HeadT = HeadTCenter;
-	HeadZ = (HeadZMin + HeadZMax)/2;
-	BodyZ1 = (BodyZ1Min + BodyZ1Max)/2;
-	BodyZ2 = (BodyZ2Min + BodyZ2Max)/2;
+	Drive=DriveStop;
+    Rotate=RotateStop;
+	Strafe=StrafeStop;
+	ServoDrive.writeMicroseconds(Drive);
+	ServoRotate.writeMicroseconds(Rotate);
+	ServoStrafe.writeMicroseconds(Strafe); 
+	LevelHeadTrigger=1;
+	CenterHeadTrigger=1;
+	HeadMidTrigger=1;
+	BodyExpandTrigger=1;
+	if (footServosPowered == true) {
 	FLSpread = (FLSpreadMin + FLSpreadMax)/2;
 	FRSpread = (FRSpreadMin + FRSpreadMax)/2;
 	BRSpread = (BRSpreadMin + BRSpreadMax)/2;
@@ -1401,42 +1660,12 @@ void animationRelaxed()   // Move all positions to the middle of the extents
 	FRHeight = (FRHeightMin + FRHeightMax)/2;
 	BRHeight = (BRHeightMin + BRHeightMax)/2;
 	BLHeight = (BLHeightMin + BLHeightMax)/2;
-	ServoFLHeight.attach(PinFLHeight);
-	ServoFRHeight.attach(PinFRHeight);
-	ServoBRHeight.attach(PinBRHeight);
-	ServoBLHeight.attach(PinBLHeight);
-	ServoFLSpread.attach(PinFLSpread);
-	ServoFRSpread.attach(PinFRSpread);
-	ServoBRSpread.attach(PinBRSpread);
-	ServoBLSpread.attach(PinBLSpread);
-	ServoDrive.writeMicroseconds(Drive);
-	ServoRotate.writeMicroseconds(Rotate);
-	ServoStrafe.writeMicroseconds(Strafe);
-	ServoHeadL.writeMicroseconds(HeadL);
-	ServoHeadR.writeMicroseconds(HeadR);
-	ServoHeadZ.writeMicroseconds(HeadZ);
-	ServoHeadT.writeMicroseconds(HeadT);
-	ServoBodyZ1.writeMicroseconds(BodyZ1);
-	ServoBodyZ2.writeMicroseconds(BodyZ2);
-	ServoFLSpread.writeMicroseconds(FLSpread);
-	ServoFRSpread.writeMicroseconds(FRSpread);
-	ServoBRSpread.writeMicroseconds(BRSpread);
-	ServoBLSpread.writeMicroseconds(BLSpread);
-	ServoFLHeight.writeMicroseconds(FLHeight);
-	ServoFRHeight.writeMicroseconds(FRHeight);
-	ServoBRHeight.writeMicroseconds(BRHeight);
-	ServoBLHeight.writeMicroseconds(BLHeight);
-	delay(1500);
-	ServoFLSpread.detach();
-   	ServoFRSpread.detach();
-   	ServoBRSpread.detach();
-   	ServoBLSpread.detach();
-	ServoFLHeight.detach();
-   	ServoFRHeight.detach();
-   	ServoBRHeight.detach();
-   	ServoBLHeight.detach();
-	footServosAttached = false;
-	Serial.println("Relaxed");
+	ServoFLSpread.writeMicroseconds(FLSpread);  // Move the spread servos
+    ServoBRSpread.writeMicroseconds(BRSpread);
+    ServoFRSpread.writeMicroseconds(FRSpread);
+    ServoBLSpread.writeMicroseconds(BLSpread);
+	}
+	//Serial.println("Relaxed");
 }
 
 
@@ -1515,9 +1744,10 @@ boolean criticalFaultDetect()
 		Strafe=StrafeStop;  
 		ServoDrive.writeMicroseconds(Drive);
 		ServoRotate.writeMicroseconds(Rotate);
-		ServoStrafe.writeMicroseconds(Strafe);	isFootMotorStopped = true;
+		ServoStrafe.writeMicroseconds(Strafe);	
+		isFootMotorStopped = true;
 		StickX = 0; 
-    StickY = 0; 
+        StickY = 0; 
 		}
 		
 		if ( msgLagTime > 10000 )
