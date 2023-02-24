@@ -339,9 +339,10 @@ void loop()   	//LOOP through functions from highest to lowest priority.
 	toggleSettings(); // reads the PS3 remote for other button presses
 	footServoPowerDown(); // Looks to see if it has be 5 seconds since last foot height adjustment
 	currentMillis = millis();
-	if (soundNum >0) { animationSounds(); }
-	if (animationTrigger == 1) { animation1(); }
-	if (animationTrigger == 2) { animation2(); }
+	if (soundNum >0) { animationSounds(); }       // trigger for sound looping
+	if (animationTrigger == 1) { animation1(); }  // trigger animation 1, head movements
+	if (animationTrigger == 2) { animation2(); }  // trigger animation 2, head and some body movements
+	if (HeadZ > HeadZMid) {LevelHeadTrigger=1;}   // failsafe to level head if it gets lowered beyond the mid-point
 	animations();
 }
 
@@ -411,7 +412,7 @@ boolean ps3MotorDrive(PS3BT* myPS3 = PS3Nav)
         } else { Drive = 0; }
       } else { isFootMotorStopped = false;
         if (1500 - Drive/5.262 < StickY) {
-          if ((StickY-(1500 - Drive/5.26))>(ramping+1)) {
+          if ((StickY-(1500 - Drive/5.262))>(ramping+1)) {
             Drive+=ramping;
           } else
           Drive = 1500 - 5.262 * StickY;
@@ -482,7 +483,7 @@ boolean ps3MotorDrive(PS3BT* myPS3 = PS3Nav)
            else if (myPS3->getButtonPress(L3) && !myPS3->getButtonPress(L1) && !myPS3->getButtonPress(L2))  // L3 Stick - Drive / Strafe 
           {
            //Serial.print("Drive/Strafe ");
-           Drive = (1500 - 4 * StickY);
+           Drive = (1500 - 5.262 * StickY);
            if (Drive > DriveMax) Drive=DriveMax;
            if (Drive < DriveMin) Drive=DriveMin;
            if ((Drive > 1500) && (Drive - joystickDeadZoneRange < 1500)) Drive=DriveStop;
@@ -549,12 +550,12 @@ boolean ps3MotorDrive(PS3BT* myPS3 = PS3Nav)
 		  //**************************************************  
           else if (!myPS3->getButtonPress(L1) && !myPS3->getButtonPress(L2) && !myPS3->getButtonPress(L3))  // Stick - Drive/Rotate 
           {
-           Drive = (1500 - 2.6 * StickY);
+           Drive = (1500 - 5.262 * StickY);
            if (Drive >  DriveMax) Drive= DriveMax;
            if (Drive <  DriveMin) Drive= DriveMin;
            if ((Drive > 1500) && (Drive - joystickDeadZoneRange < 1500)) Drive=DriveStop;
            if ((Drive < 1500) && ((1500 - Drive) < joystickDeadZoneRange)) Drive=DriveStop;
-           Rotate = (1500 - 3.1 * StickX);
+           Rotate = (1500 - 6.25 * StickX);
            if (Rotate > RotateMax) Rotate=RotateMax;
            if (Rotate < RotateMin) Rotate=RotateMin;
            if ((Rotate > 1500) && (Rotate - joystickDeadZoneRange < 1500)) Rotate=RotateStop;
