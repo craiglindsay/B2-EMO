@@ -78,7 +78,7 @@ int HeadZMax = 1925;  //Max is all the way down in this case
 int HeadZMid = (HeadZMin + HeadZMax)/2;
 int HeadTMin = 200;     // head turning left/right
 int HeadTMax = 2800;    // head turning left/right
-int HeadTCenter = 1425;  // set this to the center
+int HeadTCenter = 1465;  // set this to the center
 int BodyZ1Min = 1100; // This is body Z1 closed 
 int BodyZ1Max = 1900; // This is body Z1 open
 int BodyZ2Min = 1000; // This is body Z1 open  
@@ -203,8 +203,8 @@ int animationStep = 0;                  // animation step for routines
 unsigned long animatecurrentmillis = 0; // storage for animation timer
 unsigned long animateprevmillis = 0;    // storage for animation timer
 unsigned long animateTimer;             // storage for animation timer
-int animationTrigger = 0;
 unsigned long animateDelay = 0;
+int animationTrigger = 0;
 int secondsInAnimation =0;
 
 boolean CenterHeadTrigger = false;
@@ -324,7 +324,6 @@ digitalWrite(PinUpperMotorB, HIGH);
 digitalWrite(PinLowerMotorA, HIGH);  
 digitalWrite(PinLowerMotorB, HIGH);  
 digitalWrite(Pin1FeetServoAttached, HIGH);  
-delay(100);
 digitalWrite(Pin2FeetServoAttached, HIGH);  
 
 }
@@ -483,7 +482,7 @@ boolean ps3MotorDrive(PS3BT* myPS3 = PS3Nav)
            else if (myPS3->getButtonPress(L3) && !myPS3->getButtonPress(L1) && !myPS3->getButtonPress(L2))  // L3 Stick - Drive / Strafe 
           {
            //Serial.print("Drive/Strafe ");
-           Drive = (1500 - 5.262 * StickY);
+           Drive = (1500 - 4 * StickY);
            if (Drive > DriveMax) Drive=DriveMax;
            if (Drive < DriveMin) Drive=DriveMin;
            if ((Drive > 1500) && (Drive - joystickDeadZoneRange < 1500)) Drive=DriveStop;
@@ -550,12 +549,12 @@ boolean ps3MotorDrive(PS3BT* myPS3 = PS3Nav)
 		  //**************************************************  
           else if (!myPS3->getButtonPress(L1) && !myPS3->getButtonPress(L2) && !myPS3->getButtonPress(L3))  // Stick - Drive/Rotate 
           {
-           Drive = (1500 - 5.262 * StickY);
+           Drive = (1500 - 2.6 * StickY);
            if (Drive >  DriveMax) Drive= DriveMax;
            if (Drive <  DriveMin) Drive= DriveMin;
            if ((Drive > 1500) && (Drive - joystickDeadZoneRange < 1500)) Drive=DriveStop;
            if ((Drive < 1500) && ((1500 - Drive) < joystickDeadZoneRange)) Drive=DriveStop;
-           Rotate = (1500 - 6.25 * StickX);
+           Rotate = (1500 - 3.1 * StickX);
            if (Rotate > RotateMax) Rotate=RotateMax;
            if (Rotate < RotateMin) Rotate=RotateMin;
            if ((Rotate > 1500) && (Rotate - joystickDeadZoneRange < 1500)) Rotate=RotateStop;
@@ -720,18 +719,10 @@ void ps3ToggleSettings(PS3BT* myPS3 = PS3Nav)
 	// PS + Up - B2 Expands
 	if(myPS3->getButtonPress(PS) && myPS3->getButtonClick(UP))
 	{
-		BodyExpandTrigger=1;
-		HeadUpTrigger=1;
-		LevelHeadTrigger=1;
-		CenterHeadTrigger=1;
 	}
 	// PS + Down  - B2 Tucks-In
 	if(myPS3->getButtonPress(PS) && myPS3->getButtonClick(DOWN))
 	{
-		LevelHeadTrigger=1;
-		CenterHeadTrigger=1;
-		HeadDownTrigger=1;
-		BodyTuckInTrigger=1;
 	}
 	// PS + Left - 
 	if(myPS3->getButtonPress(PS) && myPS3->getButtonClick(LEFT))
@@ -745,11 +736,6 @@ void ps3ToggleSettings(PS3BT* myPS3 = PS3Nav)
 	// PS + Circle -
 	if(myPS3->getButtonPress(PS) && myPS3->getButtonClick(CIRCLE))
 	{
-	if (soundNum == 0) {
-		soundNum = 1;
-		soundcurrentmillis = millis();
-		soundprevmillis = soundcurrentmillis;
-	} else {soundNum = 0;}
 	}
 	// PS + Cross - Automation routine toggle, Off, Low, High
 	if(myPS3->getButtonPress(PS) && myPS3->getButtonClick(CROSS))
@@ -757,18 +743,27 @@ void ps3ToggleSettings(PS3BT* myPS3 = PS3Nav)
 	if (animationTrigger == 0) {
 		animationTrigger = 1;            
 		animationStep = 1;
+		animateDelay=0;
 		animatecurrentmillis = millis();
 		animateprevmillis = animatecurrentmillis;
 		Serial.print ("Animation");
-        Serial.print (animationTrigger);
-		//} 
-		//else if (animationTrigger == 1) {
-		//animationTrigger = 0;              // changed to zero for testing, canbe changed back to ++ to increment here to go to additional animation routines
-		} else {animationTrigger = 0;
+        Serial.println (animationTrigger);
+		} 
+		else if (animationTrigger == 1) {
+		animationTrigger = 2;
+		animationStep = 1;
+		animateDelay=0;
+		resetTriggers();
+		Serial.print ("Animation");
+        Serial.println (animationTrigger);
+		} else {
+		animationTrigger = 0;
+		animateDelay=0;
+		resetTriggers();
 		animationStep = 0;
 		Serial.print ("Animation");
-        Serial.print (animationTrigger);
-		}	
+        Serial.println (animationTrigger);
+		}
 	}
 	// PS + L1 
 	if(!myPS3->getButtonPress(L2) && myPS3->getButtonPress(PS) && myPS3->getButtonClick(L1))
@@ -792,10 +787,10 @@ void ps3ToggleSettings(PS3BT* myPS3 = PS3Nav)
 			if (!overSpeedSelected)
 			{
 				overSpeedSelected = true;
-				myDFPlayer.play(20); // Enable sound (16)
+				myDFPlayer.play(16); // Enable sound (16)
 			} else {
 				overSpeedSelected = false;
-				myDFPlayer.play(21); // Diable sound (15)
+				myDFPlayer.play(15); // Diable sound (15)
 			}
 		}
 	}
@@ -841,11 +836,15 @@ void ps3ToggleSettings(PS3BT* myPS3 = PS3Nav)
 	if(!myPS3->getButtonPress(L1) && myPS3->getButtonPress(L2) && myPS3->getButtonClick(UP))
 	{
     BodyExpandTrigger=1;
+	HeadUpTrigger=1;
 	}
 	// L2 + Down 
 	if(!myPS3->getButtonPress(L1) && myPS3->getButtonPress(L2) && myPS3->getButtonClick(DOWN))
 	{
+	LevelHeadTrigger=1;
+	CenterHeadTrigger=1;
 	BodyTuckInTrigger=1;
+	HeadDownTrigger=1;
 	}
 	// L2 + Left 
 	if(!myPS3->getButtonPress(L1) && myPS3->getButtonPress(L2) && myPS3->getButtonClick(LEFT))
@@ -933,6 +932,7 @@ void ps3ToggleSettings(PS3BT* myPS3 = PS3Nav)
 	// L1 + PS 
 	if(!myPS3->getButtonPress(L2) && myPS3->getButtonPress(L1) && myPS3->getButtonClick(PS))
 	{
+	myDFPlayer.play(12);
 	}
 	// L1 + L3 
 	if(!myPS3->getButtonPress(L2) && myPS3->getButtonPress(L1) && myPS3->getButtonClick(L3))
@@ -944,11 +944,15 @@ void ps3ToggleSettings(PS3BT* myPS3 = PS3Nav)
 // =======================================================================================
 	// Up - 
 	if (PS3Nav->getButtonClick(UP) && !PS3Nav->getButtonPress(CROSS) && !PS3Nav->getButtonPress(CIRCLE) && !PS3Nav->getButtonPress(L1) && !PS3Nav->getButtonPress(L2) && !PS3Nav->getButtonPress(PS)) {
-	myDFPlayer.play(2);
+	if (soundNum == 0) {
+		soundNum = 1;
+		soundcurrentmillis = millis();
+		soundprevmillis = soundcurrentmillis;
 	}
-	// Down  - 
+	}
+	// Down  - relax
 	if (PS3Nav->getButtonClick(DOWN) && !PS3Nav->getButtonPress(CROSS) && !PS3Nav->getButtonPress(CIRCLE) && !PS3Nav->getButtonPress(L1) && !PS3Nav->getButtonPress(L2) && !PS3Nav->getButtonPress(PS)) {
-	myDFPlayer.play(12);
+	resetTriggers();
 	animationTrigger=0;
 	soundNum=0;
 	relax();
@@ -977,7 +981,6 @@ void FootServoPowerUp()
     if (footServosPowered == false)
 	{
 	digitalWrite(Pin1FeetServoAttached, HIGH);
-	delay(100);
 	digitalWrite(Pin2FeetServoAttached, HIGH);
 	footServosPowered = true;
 	}
@@ -991,18 +994,14 @@ void footServoPowerDown()
 	{
    	   if (currentMillis - footServoMillis > 10000)
 	   {
-		FLSpread = (FLSpreadMin + FLSpreadMax)/2;
-		FRSpread = (FRSpreadMin + FRSpreadMax)/2;
-		BRSpread = (BRSpreadMin + BRSpreadMax)/2;
-		BLSpread = (BLSpreadMin + BLSpreadMax)/2;
 		FLHeight = (FLHeightMin + FLHeightMax)/2;
 		FRHeight = (FRHeightMin + FRHeightMax)/2;
 		BRHeight = (BRHeightMin + BRHeightMax)/2;
 		BLHeight = (BLHeightMin + BLHeightMax)/2;
-	    ServoFLSpread.writeMicroseconds(FLSpread);  // Move the spread servos
-        ServoBRSpread.writeMicroseconds(BRSpread);
-        ServoFRSpread.writeMicroseconds(FRSpread);
-        ServoBLSpread.writeMicroseconds(BLSpread);
+	    ServoFLHeight.writeMicroseconds(FLHeight);  // Move the spread servos
+        ServoBRHeight.writeMicroseconds(BRHeight);
+        ServoFRHeight.writeMicroseconds(FRHeight);
+        ServoBLHeight.writeMicroseconds(BLHeight);
 		delay(500);
 		footServosPowered = false;
 		digitalWrite(Pin1FeetServoAttached, LOW);  // Disables power to feet servos
@@ -1020,37 +1019,37 @@ void animationSounds()     // to be replaced with routine
 	soundTimer = soundcurrentmillis - soundprevmillis;
 	if (soundTimer > 15000 && soundNum == 1)
 	{
-		myDFPlayer.play(4);
+		myDFPlayer.play(2);
 		soundNum =2;
 	}
 	if (soundTimer > 35000 && soundNum == 2)
 	{ 
-		myDFPlayer.play(13);
+		myDFPlayer.play(3);
 		soundNum =3;
 	}
 	if (soundTimer > 60000 && soundNum == 3)
 	{ 
-		myDFPlayer.play(1);
+		myDFPlayer.play(5);
 		soundNum =4;
 	}
 	if (soundTimer > 85000 && soundNum == 4)
 	{ 
-		myDFPlayer.play(3);
+		myDFPlayer.play(13);
 		soundNum =5;
 	}
 	if (soundTimer > 115000 && soundNum == 5)
 	{ 
-		myDFPlayer.play(14);
+		myDFPlayer.play(9);
 		soundNum =6;
 	}
 	if (soundTimer > 145000 && soundNum == 6)
 	{ 
-		myDFPlayer.play(9);
+		myDFPlayer.play(4);
 		soundNum =7;
 	}
 	if (soundTimer > 185000 && soundNum == 7)
 	{
-		myDFPlayer.play(11);
+		myDFPlayer.play(10);
 		soundprevmillis = soundcurrentmillis;
 		soundNum =1;
 	}
@@ -1078,13 +1077,312 @@ delay(1);          // very small delay added in to slow animations
 // =======================================================================================
 // Animation Routines
 // =======================================================================================
-	//***Body triggers***  BodyExpandTrigger=1;  BodyTuckInTrigger=1;
-	//***Head Z***   /HeadUpTrigger=1; HeadMidTrigger=1; HeadDownTrigger=1; 
-	//***head triggers***  CenterHeadTrigger=1; LevelHeadTrigger=1; TiltHeadUpTrigger=1; TiltHeadDownTrigger=1; TiltHeadLeftTrigger=1; TiltHeadRightTrigger=1;
-	//                     TurnHeadTrigger=1; + turnAmount=amount; 
-	//***ring subroutines***  spinTRBR(Delay); spinTLBL(Delay);  spinTLBR(Delay); spinTRBL(Delay); wobble (delay);
+	//
+	//***Body triggers***
+	// BodyExpandTrigger=1;  BodyTuckInTrigger=1;
+	//
+	//***Head Z***
+	//HeadUpTrigger=1; HeadMidTrigger=1; HeadDownTrigger=1; 
+	//
+	//***head triggers***
+	//  CenterHeadTrigger=1; LevelHeadTrigger=1; TiltHeadUpTrigger=1; TiltHeadDownTrigger=1; TiltHeadLeftTrigger=1; TiltHeadRightTrigger=1;
+	//  TurnHeadTrigger=1; + turnAmount=amount; 
+	//
+	//***ring subroutines***
+	//  spinTRBR(Delay); spinTLBL(Delay);  spinTLBR(Delay); spinTRBL(Delay); wobble (delay);
 
-void animation1() 
+void animation1() // Head Only Movements
+{
+	animatecurrentmillis = millis();  // update timer
+	animateTimer = animatecurrentmillis - animateprevmillis;
+	if (animateTimer > animateDelay && animationStep == 1)
+	{
+		//What to trigger for this step
+		HeadUpTrigger=1;
+		CenterHeadTrigger=1;
+		secondsInAnimation = 3; // How long should it take
+		animationStep++;        // This increments the step
+		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial.print ("Step:");
+        Serial.print (animationStep);
+		Serial.print ("  Delay:");
+        Serial.println (animateDelay/1000);
+	}
+	if (animateTimer > animateDelay && animationStep == 2)
+	{ 
+		TiltHeadUpTrigger=1;
+		secondsInAnimation = 2; // How long should it take
+		animationStep++;        // This increments the step
+		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial.print ("Step:");
+        Serial.print (animationStep);
+		Serial.print ("  Delay:");
+        Serial.println (animateDelay/1000);
+	}
+	if (animateTimer > animateDelay && animationStep == 3)
+	{ 
+		TiltHeadLeftTrigger=1;
+		secondsInAnimation = 1; // How long should it take
+		animationStep++;        // This increments the step
+		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial.print ("Step:");
+        Serial.print (animationStep);
+		Serial.print ("  Delay:");
+        Serial.println (animateDelay/1000);
+		
+	}
+	if (animateTimer > animateDelay && animationStep == 4)
+	{ 
+		LevelHeadTrigger=1;
+		secondsInAnimation = 2; // How long should it take
+		animationStep++;        // This increments the step
+		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial.print ("Step:");
+        Serial.print (animationStep);
+		Serial.print ("  Delay:");
+        Serial.println (animateDelay/1000);
+	}
+	if (animateTimer > animateDelay && animationStep == 5)
+	{ 
+		turnAmount=1350;
+		TiltHeadUpTrigger=1;
+		TurnHeadTrigger=1;
+		secondsInAnimation = 2; // How long should it take
+		animationStep++;        // This increments the step
+		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial.print ("Step:");
+        Serial.print (animationStep);
+		Serial.print ("  Delay:");
+        Serial.println (animateDelay/1000);
+	}
+	if (animateTimer > animateDelay && animationStep == 6)
+	{ 
+		turnAmount=1750;
+		TurnHeadTrigger=1;
+		secondsInAnimation = 2; // How long should it take
+		animationStep++;        // This increments the step
+		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial.print ("Step:");
+        Serial.print (animationStep);
+		Serial.print ("  Delay:");
+        Serial.println (animateDelay/1000);
+	}
+	if (animateTimer > animateDelay && animationStep == 7)
+	{ 
+		turnAmount=1600;
+		TurnHeadTrigger=1;
+		TiltHeadLeftTrigger=1;
+		secondsInAnimation = 2; // How long should it take
+		animationStep++;        // This increments the step
+		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial.print ("Step:");
+        Serial.print (animationStep);
+		Serial.print ("  Delay:");
+        Serial.println (animateDelay/1000);
+	}
+	if (animateTimer > animateDelay && animationStep == 8)
+	{ 
+		turnAmount=1750;
+		TurnHeadTrigger=1;
+		TiltHeadRightTrigger=1;
+		secondsInAnimation = 2; // How long should it take
+		animationStep++;        // This increments the step
+		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial.print ("Step:");
+        Serial.print (animationStep);
+		Serial.print ("  Delay:");
+        Serial.println (animateDelay/1000);
+	}
+	if (animateTimer > animateDelay && animationStep == 9)
+	{ 
+		turnAmount=1340;
+		TurnHeadTrigger=1;
+		LevelHeadTrigger=1;
+		secondsInAnimation = 3; // How long should it take
+		animationStep++;        // This increments the step
+		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial.print ("Step:");
+        Serial.print (animationStep);
+		Serial.print ("  Delay:");
+        Serial.println (animateDelay/1000);
+	}
+	if (animateTimer > animateDelay && animationStep == 10)
+	{ 
+		CenterHeadTrigger=1;
+		secondsInAnimation = 3; // How long should it take
+		animationStep++;        // This increments the step
+		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial.print ("Step:");
+        Serial.print (animationStep);
+		Serial.print ("  Delay:");
+        Serial.println (animateDelay/1000);
+	}
+	if (animateTimer > animateDelay && animationStep == 11)
+	{ 
+		TiltHeadUpTrigger=1;
+		secondsInAnimation = 3; // How long should it take
+		animationStep++;        // This increments the step
+		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial.print ("Step:");
+        Serial.print (animationStep);
+		Serial.print ("  Delay:");
+        Serial.println (animateDelay/1000);
+	}
+	if (animateTimer > animateDelay && animationStep == 12)
+	{ 
+		LevelHeadTrigger=1;
+		turnAmount=1400;
+		TurnHeadTrigger=1;
+		HeadMidTrigger=1;
+		secondsInAnimation = 2; // How long should it take
+		animationStep++;        // This increments the step
+		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial.print ("Step:");
+        Serial.print (animationStep);
+		Serial.print ("  Delay:");
+        Serial.println (animateDelay/1000);
+	}
+	if (animateTimer > animateDelay && animationStep == 13)
+	{ 
+		turnAmount=1600;
+		TurnHeadTrigger=1;
+		secondsInAnimation = 2; // How long should it take
+		animationStep++;        // This increments the step
+		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial.print ("Step:");
+        Serial.print (animationStep);
+		Serial.print ("  Delay:");
+        Serial.println (animateDelay/1000);
+	}
+	if (animateTimer > animateDelay && animationStep == 14)
+	{ 
+		turnAmount=1600;
+		TurnHeadTrigger=1;
+		TiltHeadRightTrigger=1;
+		HeadUpTrigger=1;
+		secondsInAnimation = 2; // How long should it take
+		animationStep++;        // This increments the step
+		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial.print ("Step:");
+        Serial.print (animationStep);
+		Serial.print ("  Delay:");
+        Serial.println (animateDelay/1000);
+	}
+	if (animateTimer > animateDelay && animationStep == 15)
+	{ 
+		turnAmount=1700;
+		TurnHeadTrigger=1;
+		TiltHeadLeftTrigger=1;
+		secondsInAnimation = 1; // How long should it take
+		animationStep++;        // This increments the step
+		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial.print ("Step:");
+        Serial.print (animationStep);
+		Serial.print ("  Delay:");
+        Serial.println (animateDelay/1000);
+	}
+	if (animateTimer > animateDelay && animationStep == 16)
+	{ 
+		HeadMidTrigger=1;
+		LevelHeadTrigger=1;
+		turnAmount=1400;
+		TurnHeadTrigger=1;
+		secondsInAnimation = 2; // How long should it take
+		animationStep++;        // This increments the step
+		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial.print ("Step:");
+        Serial.print (animationStep);
+		Serial.print ("  Delay:");
+        Serial.println (animateDelay/1000);
+	}
+	if (animateTimer > animateDelay && animationStep == 17)
+	{ 
+		HeadUpTrigger=1;
+		secondsInAnimation = 1; // How long should it take
+		animationStep++;        // This increments the step
+		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial.print ("Step:");
+        Serial.print (animationStep);
+		Serial.print ("  Delay:");
+        Serial.println (animateDelay/1000);
+	}
+	if (animateTimer > animateDelay && animationStep == 18)
+	{ 
+		HeadMidTrigger=1;
+		turnAmount=1600;
+		TurnHeadTrigger=1;
+		secondsInAnimation = 2; // How long should it take
+		animationStep++;        // This increments the step
+		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial.print ("Step:");
+        Serial.print (animationStep);
+		Serial.print ("  Delay:");
+        Serial.println (animateDelay/1000);
+	}
+	if (animateTimer > animateDelay && animationStep == 19)
+	{ 
+		CenterHeadTrigger=1;
+		HeadUpTrigger=1;
+		LevelHeadTrigger=1;
+		secondsInAnimation = 4; // How long should it take
+		animationStep++;        // This increments the step
+		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial.print ("Step:");
+        Serial.print (animationStep);
+		Serial.print ("  Delay:");
+        Serial.println (animateDelay/1000);
+	}
+	if (animateTimer > animateDelay && animationStep == 20)
+	{
+		HeadDownTrigger=1;
+		secondsInAnimation = 4;// How long should it take
+		animationStep++;        // This increments the step
+		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial.print ("Step:");
+        Serial.print (animationStep);
+		Serial.print ("  Delay:");
+        Serial.println (animateDelay/1000);
+	}
+	if (animateTimer > animateDelay && animationStep == 21)
+	{
+		HeadUpTrigger=1;
+		secondsInAnimation = 30;// How long should it take
+		animationStep++;        // This increments the step
+		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial.print ("Step:");
+        Serial.print (animationStep);
+		Serial.print ("  Delay:");
+        Serial.println (animateDelay/1000);
+	}
+	
+	if (animateTimer > animateDelay && animationStep == 22) 
+	{
+		animateDelay=0;
+		animationStep = 1;
+		animatecurrentmillis = millis();
+		animateprevmillis = animatecurrentmillis;
+		BodyExpandTrigger=0;
+		BodyTuckInTrigger=0;
+		HeadUpTrigger=0;
+		HeadMidTrigger=0;
+		HeadDownTrigger=0; 
+		CenterHeadTrigger=0;
+		LevelHeadTrigger=0;
+		TiltHeadUpTrigger=0;
+		TiltHeadDownTrigger=0;
+		TiltHeadLeftTrigger=0;
+		TiltHeadRightTrigger=0;
+		TurnHeadTrigger=0;
+		Serial.print ("Step:");
+        Serial.print (animationStep);
+		Serial.print ("  Delay:");
+        Serial.println (animateDelay/1000);
+	}
+	//Serial.println("Animation Low");
+}
+	
+
+void animation2()   // Head and other movements
 {
 	animatecurrentmillis = millis();  // update timer
 	animateTimer = animatecurrentmillis - animateprevmillis;
@@ -1097,7 +1395,10 @@ void animation1()
 		secondsInAnimation = 5; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
-
+		Serial.print ("Step:");
+        Serial.print (animationStep);
+		Serial.print ("  Delay:");
+        Serial.println (animateDelay/1000);
 	}
 	if (animateTimer > animateDelay && animationStep == 2)
 	{ 
@@ -1105,6 +1406,10 @@ void animation1()
 		secondsInAnimation = 2; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial.print ("Step:");
+        Serial.print (animationStep);
+		Serial.print ("  Delay:");
+        Serial.println (animateDelay/1000);
 	}
 	if (animateTimer > animateDelay && animationStep == 3)
 	{ 
@@ -1112,73 +1417,109 @@ void animation1()
 		secondsInAnimation = 1; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial.print ("Step:");
+        Serial.print (animationStep);
+		Serial.print ("  Delay:");
+        Serial.println (animateDelay/1000);
 		
 	}
 	if (animateTimer > animateDelay && animationStep == 4)
 	{ 
 		LevelHeadTrigger=1;
 		spinTRBL(400);
-		secondsInAnimation = 3; // How long should it take
+		secondsInAnimation = 2; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial.print ("Step:");
+        Serial.print (animationStep);
+		Serial.print ("  Delay:");
+        Serial.println (animateDelay/1000);
 	}
 	if (animateTimer > animateDelay && animationStep == 5)
 	{ 
-		turnAmount=1300;
+		turnAmount=1350;
 		TiltHeadUpTrigger=1;
 		TurnHeadTrigger=1;
 		secondsInAnimation = 2; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial.print ("Step:");
+        Serial.print (animationStep);
+		Serial.print ("  Delay:");
+        Serial.println (animateDelay/1000);
 	}
 	if (animateTimer > animateDelay && animationStep == 6)
 	{ 
-		turnAmount=1700;
+		turnAmount=1750;
 		TurnHeadTrigger=1;
-		secondsInAnimation = 3; // How long should it take
+		secondsInAnimation = 2; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial.print ("Step:");
+        Serial.print (animationStep);
+		Serial.print ("  Delay:");
+        Serial.println (animateDelay/1000);
 	}
 	if (animateTimer > animateDelay && animationStep == 7)
 	{ 
 		turnAmount=1600;
 		TurnHeadTrigger=1;
 		TiltHeadLeftTrigger=1;
-		secondsInAnimation = 3; // How long should it take
+		secondsInAnimation = 2; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial.print ("Step:");
+        Serial.print (animationStep);
+		Serial.print ("  Delay:");
+        Serial.println (animateDelay/1000);
 	}
 	if (animateTimer > animateDelay && animationStep == 8)
 	{ 
-		turnAmount=1700;
+		turnAmount=1750;
 		TurnHeadTrigger=1;
 		TiltHeadRightTrigger=1;
-		secondsInAnimation = 3; // How long should it take
+		secondsInAnimation = 2; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial.print ("Step:");
+        Serial.print (animationStep);
+		Serial.print ("  Delay:");
+        Serial.println (animateDelay/1000);
 	}
 	if (animateTimer > animateDelay && animationStep == 9)
 	{ 
-		turnAmount=1300;
+		turnAmount=1340;
 		TurnHeadTrigger=1;
+		LevelHeadTrigger=1;
 		secondsInAnimation = 3; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial.print ("Step:");
+        Serial.print (animationStep);
+		Serial.print ("  Delay:");
+        Serial.println (animateDelay/1000);
 	}
 	if (animateTimer > animateDelay && animationStep == 10)
 	{ 
-		//BodyTuckInTrigger=1;
 		CenterHeadTrigger=1;
-		secondsInAnimation = 4; // How long should it take
+		secondsInAnimation = 3; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial.print ("Step:");
+        Serial.print (animationStep);
+		Serial.print ("  Delay:");
+        Serial.println (animateDelay/1000);
 	}
 	if (animateTimer > animateDelay && animationStep == 11)
 	{ 
 		TiltHeadUpTrigger=1;
-		secondsInAnimation = 5; // How long should it take
+		secondsInAnimation = 3; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial.print ("Step:");
+        Serial.print (animationStep);
+		Serial.print ("  Delay:");
+        Serial.println (animateDelay/1000);
 	}
 	if (animateTimer > animateDelay && animationStep == 12)
 	{ 
@@ -1186,50 +1527,75 @@ void animation1()
 		turnAmount=1400;
 		TurnHeadTrigger=1;
 		HeadMidTrigger=1;
-		secondsInAnimation = 4; // How long should it take
+		secondsInAnimation = 2; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial.print ("Step:");
+        Serial.print (animationStep);
+		Serial.print ("  Delay:");
+        Serial.println (animateDelay/1000);
 	}
 	if (animateTimer > animateDelay && animationStep == 13)
 	{ 
 		turnAmount=1500;
 		TurnHeadTrigger=1;
-		HeadUpTrigger=1;
 		secondsInAnimation = 2; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial.print ("Step:");
+        Serial.print (animationStep);
+		Serial.print ("  Delay:");
+        Serial.println (animateDelay/1000);
 	}
 	if (animateTimer > animateDelay && animationStep == 14)
 	{ 
 		turnAmount=1600;
 		TurnHeadTrigger=1;
-		TiltHeadLeftTrigger=1;
+		TiltHeadRightTrigger=1;
+		HeadUpTrigger=1;
 		secondsInAnimation = 2; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial.print ("Step:");
+        Serial.print (animationStep);
+		Serial.print ("  Delay:");
+        Serial.println (animateDelay/1000);
 	}
 	if (animateTimer > animateDelay && animationStep == 15)
 	{ 
 		turnAmount=1700;
 		TurnHeadTrigger=1;
-		TiltHeadRightTrigger=1;
-		secondsInAnimation = 10; // How long should it take
+		TiltHeadLeftTrigger=1;
+		secondsInAnimation = 1; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial.print ("Step:");
+        Serial.print (animationStep);
+		Serial.print ("  Delay:");
+        Serial.println (animateDelay/1000);
 	}
 	if (animateTimer > animateDelay && animationStep == 16)
 	{ 
 		HeadMidTrigger=1;
+		LevelHeadTrigger=1;
 		secondsInAnimation = 2; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial.print ("Step:");
+        Serial.print (animationStep);
+		Serial.print ("  Delay:");
+        Serial.println (animateDelay/1000);
 	}
 	if (animateTimer > animateDelay && animationStep == 17)
 	{ 
 		HeadUpTrigger=1;
-		secondsInAnimation = 2; // How long should it take
+		secondsInAnimation = 1; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial.print ("Step:");
+        Serial.print (animationStep);
+		Serial.print ("  Delay:");
+        Serial.println (animateDelay/1000);
 	}
 	if (animateTimer > animateDelay && animationStep == 18)
 	{ 
@@ -1237,66 +1603,95 @@ void animation1()
 		secondsInAnimation = 2; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial.print ("Step:");
+        Serial.print (animationStep);
+		Serial.print ("  Delay:");
+        Serial.println (animateDelay/1000);
 	}
 	if (animateTimer > animateDelay && animationStep == 19)
 	{ 
-		turnAmount=1700;
-		TurnHeadTrigger=1;
-		secondsInAnimation = 8; // How long should it take
+		CenterHeadTrigger=1;
+		HeadUpTrigger=1;
+		LevelHeadTrigger=1;
+		secondsInAnimation = 5; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial.print ("Step:");
+        Serial.print (animationStep);
+		Serial.print ("  Delay:");
+        Serial.println (animateDelay/1000);
 	}
 	if (animateTimer > animateDelay && animationStep == 20)
 	{
-		animationStep=1;
-		LevelHeadTrigger=1;
-		CenterHeadTrigger=1;
 		BodyTuckInTrigger=1;
 		HeadDownTrigger=1;
-		secondsInAnimation = 5;
+		secondsInAnimation = 30;// How long should it take
+		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
-		animateprevmillis = animatecurrentmillis;
+		Serial.print ("Step:");
+        Serial.print (animationStep);
+		Serial.print ("  Delay:");
+        Serial.println (animateDelay/1000);
 	}
-	if (animationStep > 20) {animationStep=1;}
-   //Serial.println("Animation Low");
-}
+	if (animateTimer > animateDelay && animationStep == 21)
+	{
+		BodyTuckInTrigger=1;
+		HeadUpTrigger=1;
+		secondsInAnimation = 10;// How long should it take
+		animationStep++;        // This increments the step
+		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial.print ("Step:");
+        Serial.print (animationStep);
+		Serial.print ("  Delay:");
+        Serial.println (animateDelay/1000);
+	}
 	
-
-void animation2()   // to be replaced with routines - idea is to create building blocks and call them here in order
-{
-	// if not expanded to full, expand to full
-	// if not Head raised, raise Head
-	// timer - look left
-	// look more left slowly
-	// slowly back to center
-	// say something
-	// timer - look right
-	// time  - tilt Head some direction
-	// timer - look more right
-	// time  - tilt Head more direction
-	// timer - look forward
-	// spin rings and make a sound
-	// timer - lower a half
-	// stop spinning rings
-	// say something else
-	// expand up
-	// look left then right, then left, right, forward
-	// say something
-	// tilt backward and look forward and up
-	// say casa, casa, i miss marva
-	// wait a short while then tuck in
-    relax(); // relax
-	// wait a while
-	// start loop again
-
+	if (animateTimer > animateDelay && animationStep == 22) 
+	{
+		animateDelay=0;
+		animationStep = 1;
+		animatecurrentmillis = millis();
+		animateprevmillis = animatecurrentmillis;
+		BodyExpandTrigger=0;
+		BodyTuckInTrigger=0;
+		HeadUpTrigger=0;
+		HeadMidTrigger=0;
+		HeadDownTrigger=0; 
+		CenterHeadTrigger=0;
+		LevelHeadTrigger=0;
+		TiltHeadUpTrigger=0;
+		TiltHeadDownTrigger=0;
+		TiltHeadLeftTrigger=0;
+		TiltHeadRightTrigger=0;
+		TurnHeadTrigger=0;
+		Serial.print ("Step:");
+        Serial.print (animationStep);
+		Serial.print ("  Delay:");
+        Serial.println (animateDelay/1000);
+	}
 	//Serial.println("Animation High");
 }
 
-
+void resetTriggers()
+{
+BodyExpandTrigger=0;
+BodyTuckInTrigger=0;
+HeadUpTrigger=0;
+HeadMidTrigger=0;
+HeadDownTrigger=0; 
+CenterHeadTrigger=0;
+LevelHeadTrigger=0;
+TiltHeadUpTrigger=0;
+TiltHeadDownTrigger=0;
+TiltHeadLeftTrigger=0;
+TiltHeadRightTrigger=0;
+TurnHeadTrigger=0;
+}
 
 void turnHead()
 {
 	if (TurnHeadTrigger) {
+	CenterHeadTrigger=0;
 	if (HeadT < turnAmount) { 
 		HeadT++; 
 		ServoHeadT.writeMicroseconds(HeadT);   // loop HeadT to deg
@@ -1305,15 +1700,17 @@ void turnHead()
 		HeadT--;
 		ServoHeadT.writeMicroseconds(HeadT);   // loop HeadT to deg
 		}
-	if (HeadT == turnAmount) {TurnHeadTrigger=false;}
+	if (HeadT == turnAmount) {TurnHeadTrigger=0;}
 	Serial.print ("Turning Head to: ");
     Serial.println (turnAmount);
-}
+	}
 }
 
 void centerHead()
 {
   if (CenterHeadTrigger) {
+	TurnHeadTrigger = 0;
+	turnAmount=HeadTCenter;
 	if (HeadT < HeadTCenter) { 
 		HeadT++;
 		ServoHeadT.writeMicroseconds(HeadT);   // loop HeadT to center
@@ -1322,7 +1719,7 @@ void centerHead()
 		HeadT--;
 		ServoHeadT.writeMicroseconds(HeadT);   // loop HeadT to center
 		}
-	 if (HeadT == HeadTCenter) {CenterHeadTrigger=false;}
+	 if (HeadT == HeadTCenter) {CenterHeadTrigger=0;}
 	 	Serial.println ("Centering Head");
   }
 }
@@ -1350,7 +1747,7 @@ void levelHead()
 	HeadLeft--;
 	ServoHeadLeft.writeMicroseconds(HeadLeft);   // loop HeadLeft to center
 	}
-	if ((HeadLeft == HeadLeftCenter) && (HeadRight == HeadRightCenter)) {LevelHeadTrigger=false;}
+	if ((HeadLeft == HeadLeftCenter) && (HeadRight == HeadRightCenter)) {LevelHeadTrigger=0;}
 	Serial.println ("Leveling Head");
   }
 }
@@ -1370,7 +1767,7 @@ void tiltHeadUp()
 	HeadLeft++;
 	ServoHeadLeft.writeMicroseconds(HeadLeft);   // loop HeadLeft to HeadLeftMax
 	}
-	if ((HeadLeft == HeadLeftMax) && (HeadRight == HeadRightMin)) {TiltHeadUpTrigger=false;}
+	if ((HeadLeft == HeadLeftMax) && (HeadRight == HeadRightMin)) {TiltHeadUpTrigger=0;}
 	Serial.println ("Tilting Head Up");
   }
 }
@@ -1390,7 +1787,7 @@ void tiltHeadDown()
 	HeadLeft--;
 	ServoHeadLeft.writeMicroseconds(HeadLeft);   // loop HeadLeft to HeadLeftMin
 	}
-	if ((HeadLeft == HeadLeftMin) && (HeadRight == HeadRightMax)) {TiltHeadDownTrigger=false;}
+	if ((HeadLeft == HeadLeftMin) && (HeadRight == HeadRightMax)) {TiltHeadDownTrigger=0;}
 	Serial.println ("Tilting Head Down");
   }
 }
@@ -1410,7 +1807,7 @@ void tiltHeadLeft()
 	HeadLeft++;
 	ServoHeadLeft.writeMicroseconds(HeadLeft);   // loop HeadLeft to HeadLeftMin
 	}
-	if ((HeadLeft == HeadLeftMax) && (HeadRight == HeadRightMax)) {TiltHeadLeftTrigger=false;}
+	if ((HeadLeft == HeadLeftMax) && (HeadRight == HeadRightMax)) {TiltHeadLeftTrigger=0;}
 	Serial.println ("Tilting Head Left");
   }
 }
@@ -1430,7 +1827,7 @@ void tiltHeadRight()
 	HeadLeft--;
 	ServoHeadLeft.writeMicroseconds(HeadLeft);   // loop HeadLeft to HeadLeftMin
 	}
-	if ((HeadLeft == HeadLeftMin) && (HeadRight == HeadRightMin)) {TiltHeadRightTrigger=false;}
+	if ((HeadLeft == HeadLeftMin) && (HeadRight == HeadRightMin)) {TiltHeadRightTrigger=0;}
 	Serial.println ("Tilting Head Right");
   }
 }
@@ -1438,11 +1835,15 @@ void tiltHeadRight()
 void raiseHead()  // min value is up in this case
 {
 	if (HeadUpTrigger) {
+	HeadDownTrigger=0;
+	HeadMidTrigger=0;
 	if (HeadZ > HeadZMin) {
-	HeadZ--;
+	HeadZ = HeadZ - 3 ;
 	ServoHeadZ.writeMicroseconds(HeadZ);   // loop Head Z to to min value (opened)
 	}
-	if (HeadZ == HeadZMin) {HeadUpTrigger=false;}
+	if (HeadZ <= HeadZMin) {
+		HeadZ = HeadZMin;
+		HeadUpTrigger=0;}
 	Serial.println ("Rasing Head Up");
 	}
 }
@@ -1450,6 +1851,8 @@ void raiseHead()  // min value is up in this case
 void midHead()
 {
     if (HeadMidTrigger) {
+	HeadDownTrigger=0;
+	HeadUpTrigger=0;
 	if (HeadZ < HeadZMid) { 
 	HeadZ++;
 	ServoHeadZ.writeMicroseconds(HeadZ);   // loop HeadZ to HeadZMid
@@ -1457,7 +1860,7 @@ void midHead()
 	if (HeadZ > HeadZMid) {
 	HeadZ--;
 	}
-	if (HeadZ == HeadZMid) {HeadMidTrigger=false;}
+	if (HeadZ == HeadZMid) {HeadMidTrigger=0;}
 	Serial.println ("Head to Middle");
 	}
 }
@@ -1465,11 +1868,15 @@ void midHead()
 void lowerHead()  // max values is down in this case
 {
 	if (HeadDownTrigger) {
+	HeadUpTrigger=0;
+	HeadMidTrigger=0;
 	if (HeadZ < HeadZMax) {
-	HeadZ++;
+	HeadZ = HeadZ + 3 ;
 	ServoHeadZ.writeMicroseconds(HeadZ);   // loop Head Z to to min value (opened)
 	}
-	if (HeadZ == HeadZMax) {HeadDownTrigger=false;}
+	if (HeadZ >= HeadZMax) {
+		HeadZ = HeadZMax;
+		HeadDownTrigger=0;}
 	Serial.println ("Lowering Head Down");
 	}
 }
@@ -1478,15 +1885,19 @@ void lowerHead()  // max values is down in this case
 void tuckInBody()   // to be replaced with routine
 {   
 	if (BodyTuckInTrigger) {
+	BodyExpandTrigger=0;
     if (BodyZ2 < BodyZ2Max) {
-	BodyZ2++;
+		BodyZ2++;
 	ServoBodyZ2.writeMicroseconds(BodyZ2);   // loop body z2 to to max value (closed)
 	}
 	if (BodyZ1 > BodyZ1Min) {
 		BodyZ1--;
 	ServoBodyZ1.writeMicroseconds(BodyZ1);   // loop body z1 to min (closed)
 	}
-	if ((BodyZ1 == BodyZ1Min) && (BodyZ2 == BodyZ2Max)) {BodyTuckInTrigger=false;}
+	if ((BodyZ1 <= BodyZ1Min) && (BodyZ2 >= BodyZ2Max)) {
+		BodyZ1 = BodyZ1Min;
+		BodyZ2 = BodyZ2Max;
+		BodyTuckInTrigger=0;}
 	Serial.println ("Tucking in body");
     }
 }
@@ -1495,6 +1906,7 @@ void expandBody()   // to be replaced with routine
 {
 	//Serial.println("Expand");
 	if (BodyExpandTrigger) {
+	BodyTuckInTrigger = 0;
     if (BodyZ2 > BodyZ2Min) {
 		BodyZ2--;
 		ServoBodyZ2.writeMicroseconds(BodyZ2);   // loop body z2 to to max value (closed)
@@ -1503,7 +1915,10 @@ void expandBody()   // to be replaced with routine
 		BodyZ1++;
 		ServoBodyZ1.writeMicroseconds(BodyZ1);   // loop body z1 to min (closed)
 	}
-	if ((BodyZ1 == BodyZ1Max) && (BodyZ2 == BodyZ2Min)) {BodyExpandTrigger=false;}
+	if ((BodyZ1 >= BodyZ1Max) && (BodyZ2 <= BodyZ2Min)) {
+		BodyZ1 = BodyZ1Max; 
+		BodyZ2 = BodyZ2Min;
+		BodyExpandTrigger=0;}
 	Serial.println ("Expanding Body");
     }
 }
@@ -1651,6 +2066,21 @@ void relax()   // Move all positions to the middle of the extents
 	CenterHeadTrigger=1;
 	HeadMidTrigger=1;
 	BodyExpandTrigger=1;
+	//Serial.println("Relaxed");
+}
+
+void centerRelax()   // Move all positions to the middle of the extents
+{
+	Drive=DriveStop;
+    Rotate=RotateStop;
+	Strafe=StrafeStop;
+	ServoDrive.writeMicroseconds(Drive);
+	ServoRotate.writeMicroseconds(Rotate);
+	ServoStrafe.writeMicroseconds(Strafe); 
+	LevelHeadTrigger=1;
+	CenterHeadTrigger=1;
+	HeadMidTrigger=1;
+	BodyExpandTrigger=1;
 	if (footServosPowered == true) {
 	FLSpread = (FLSpreadMin + FLSpreadMax)/2;
 	FRSpread = (FRSpreadMin + FRSpreadMax)/2;
@@ -1665,8 +2095,9 @@ void relax()   // Move all positions to the middle of the extents
     ServoFRSpread.writeMicroseconds(FRSpread);
     ServoBLSpread.writeMicroseconds(BLSpread);
 	}
-	//Serial.println("Relaxed");
+	//Serial.println("Centered and Relaxed");
 }
+
 
 
 
@@ -1832,7 +2263,7 @@ boolean readUSB()
 		}
 	} else if (!isFootMotorStopped)
 	{
-    //Serial.println("Second critical fauly section ");
+    //Serial.println("Second critical fault section ");
 	Drive=DriveStop;
 	Rotate=RotateStop;
 	Strafe=StrafeStop;  

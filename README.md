@@ -26,6 +26,6 @@
 //      - PS3 Move Navigation
 //
 //   PS3 Bluetooth library - developed by Kristian Lauszus (kristianl@tkjelectronics.com)
-//   For more information visit my blog: http://blog.tkjelectronics.dk/
+//   For more information about the bluetooth library visit: http://blog.tkjelectronics.dk/
 //
 //
