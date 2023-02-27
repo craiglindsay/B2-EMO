@@ -609,7 +609,6 @@ void ps3ToggleSettings(PS3BT* myPS3 = PS3Nav)
 	if(myPS3->getButtonPress(CIRCLE) && myPS3->getButtonClick(UP))
 	{
 		HeadUpTrigger=1;
-		
 	}
 	// Circle + Down 
 	if(myPS3->getButtonPress(CIRCLE) && myPS3->getButtonClick(DOWN))
@@ -717,22 +716,28 @@ void ps3ToggleSettings(PS3BT* myPS3 = PS3Nav)
 // =======================================================================================
 // PS Button Combos 
 // =======================================================================================
-	// PS + Up - B2 Expands
+	// PS + Up 
 	if(myPS3->getButtonPress(PS) && myPS3->getButtonClick(UP))
 	{
+	BodyExpandTrigger=1;
+	myDFPlayer.play(11);
 	}
-	// PS + Down  - B2 Tucks-In
+	// PS + Down
 	if(myPS3->getButtonPress(PS) && myPS3->getButtonClick(DOWN))
 	{
+	BodyTuckInTrigger=1;
+	myDFPlayer.play(11);
 	}
 	// PS + Left - 
 	if(myPS3->getButtonPress(PS) && myPS3->getButtonClick(LEFT))
 	{
-		wobble(150);
+	wobble(150);
 	}
 	// PS + Right 
 	if(myPS3->getButtonPress(PS) && myPS3->getButtonClick(RIGHT))
 	{
+	spinTLBR(400);
+	myDFPlayer.play(11);
 	}
 	// PS + Circle -
 	if(myPS3->getButtonPress(PS) && myPS3->getButtonClick(CIRCLE))
@@ -802,32 +807,39 @@ void ps3ToggleSettings(PS3BT* myPS3 = PS3Nav)
 	// L1 + L2 + Up
 	if(myPS3->getButtonPress(L2) && myPS3->getButtonPress(L1) && myPS3->getButtonClick(UP))
 	{
-	Serial2.print("0");  // future lighting test
+	myDFPlayer.play(17);
+	//Serial2.print("0");  // future lighting test
 	}
 	//  L1 + L2 + Down
 	if(myPS3->getButtonPress(L2) && myPS3->getButtonPress(L1) && myPS3->getButtonClick(DOWN))
 	{
-	Serial2.print("1");  // future lighting test
+	myDFPlayer.play(18);
+	//Serial2.print("1");  // future lighting test
 	}
 	// L1 + L2 + Left
 	if(myPS3->getButtonPress(L2) && myPS3->getButtonPress(L1) && myPS3->getButtonClick(LEFT))
 	{
+	myDFPlayer.play(20);
 	}
 	// L1 + L2 + Right 
 	if(myPS3->getButtonPress(L2) && myPS3->getButtonPress(L1) && myPS3->getButtonClick(RIGHT))
 	{
+	myDFPlayer.play(21);
 	}
 	// L1 + L2 + Circle 
 	if(myPS3->getButtonPress(L2) && myPS3->getButtonPress(L1) && myPS3->getButtonClick(CIRCLE))
 	{
+	myDFPlayer.play(22);
 	}
 	// (L1 + L2 + Cross) 
 	if(myPS3->getButtonPress(L2) && myPS3->getButtonPress(L1) && myPS3->getButtonClick(CROSS))
 	{
+	myDFPlayer.play(23);
 	}
 	// (L1 + L2 + PS) 
 	if(myPS3->getButtonPress(L2) && myPS3->getButtonPress(L1) && myPS3->getButtonClick(PS))
 	{
+	myDFPlayer.play(14);
 	}
 
 // =======================================================================================
@@ -933,7 +945,7 @@ void ps3ToggleSettings(PS3BT* myPS3 = PS3Nav)
 	// L1 + PS 
 	if(!myPS3->getButtonPress(L2) && myPS3->getButtonPress(L1) && myPS3->getButtonClick(PS))
 	{
-	myDFPlayer.play(12);
+	myDFPlayer.play(23);
 	}
 	// L1 + L3 
 	if(!myPS3->getButtonPress(L2) && myPS3->getButtonPress(L1) && myPS3->getButtonClick(L3))
