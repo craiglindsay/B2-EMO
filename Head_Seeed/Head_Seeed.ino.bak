@@ -1,9 +1,9 @@
 #include <Adafruit_NeoPixel.h>
 #define PINE 5      // Eye
 #define PINL 6      // Logic
-#define PINF8 D7     // Front 8 segment riser
-#define PINF3 D8     // Front 3 segment riser
-#define PINB3 D9     // Back 3 segment riser
+#define PINF8 7     // Front 8 segment riser
+#define PINF3 8     // Front 3 segment riser
+#define PINB3 9     // Back 3 segment riser
 #define NUM_LEDS 32
 // ------------------------------------------
 int fun;          // variable "fun" is the serial command received from the mega
@@ -120,19 +120,9 @@ SoftwareSerial mySerial(2, 3); // RX, TX
 
 void setup() {
   fun = 0;
-  mySerial.begin(115200);     // Hardware serial for receiving from B2's mega
-  strip.begin();  // Eye initilization
+  mySerial.begin(115200);     // Hardware serial for receiving from R2's mega
+  strip.begin();  // Right foot initilization
   strip.show();   // Initialize all pixels to 'off'
-  stripLogic.begin();  // Logic initilization
-  stripLogic.show();   // Initialize all pixels to 'off'
-  stripFront3.begin();  // Front 3 Segment Riser
-  stripFront3.show();   // Initialize all pixels to 'off'
-  stripFront8.begin();  // Front 8 Segment Riser
-  stripFront8.show();   // Initialize all pixels to 'off'
-  stripBack3.begin();  // Back 3 segment riser
-  stripBack3.show();   // Initialize all pixels to 'off'
-  stripFront8.fill( stripFront8.Color(0, 0, 128),0,120); 
-  stripFront8.show();
   }
  
 void loop() {
@@ -142,21 +132,13 @@ void loop() {
      {
      strip.clear(); 
      strip.show();
-     stripLogic.clear(); 
-     stripLogic.show();
-     //stripFront8.clear(); 
-     //stripFront8.show();
-     stripFront3.clear(); 
-     stripFront3.show();
-     stripBack3.clear(); 
-     stripBack3.show();
      fun = 100;
      }
      if (fun == 1 ) // Surfin Safari
      { 
      strip.clear(); 
      strip.fill( strip.Color(0, 0, 128),0,120); 
-	   strip.show();
+	 strip.show();
 	 fun = 100;
      }
      if (fun == 2 ) // Misirlou
@@ -299,423 +281,73 @@ void loop() {
      }	 
 	 if (fun == 36 ) // Bat1 100%
      {
-	  for(int j=0; j<6; j++) 
+	  for(int j=0; j<21; j++) 
 	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(0, 255, 0));
-      }
-	  for(int j=6; j<11; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(0, 255, 0));
-      }
-	  for(int j=11; j<16; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(0, 255, 0));
-      }
-	  for(int j=16; j<21; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(0, 255, 0));
-      }
-	  stripFront8.show();
-	  fun = 100;
+	  stripFront8.setPixelColor(j, strip.Color(0, 255, 0));
+      stripFront8.show();
+	  }
      }
  	 if (fun == 37 ) // Bat1 90%
      {
-	  for(int j=0; j<6; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(0, 255, 0));
-      }
-	  for(int j=6; j<11; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(0, 255, 0));
-      }
-	  for(int j=11; j<16; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(0, 255, 0));
-      }
-	  for(int j=16; j<21; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 255, 0));
-      }
-	  stripFront8.show();
-	  fun = 100;
      }	 
  	 if (fun == 38 ) // Bat1 80%
      {
-	  for(int j=0; j<6; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(0, 255, 0));
-      }
-	  for(int j=6; j<11; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(0, 255, 0));
-      }
-	  for(int j=11; j<16; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 255, 0));
-      }
-	  for(int j=16; j<21; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 255, 0));
-      }
-	  stripFront8.show();
-	  fun = 100;
      }	 
  	 if (fun == 39 ) // Bat1 70%
      {
-	  for(int j=0; j<6; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(0, 255, 0));
-      }
-	  for(int j=6; j<11; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 255, 0));
-      }
-	  for(int j=11; j<16; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 255, 0));
-      }
-	  for(int j=16; j<21; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 255, 0));
-      }
-	  stripFront8.show();
-	  fun = 100;
      }	 
  	 if (fun == 40 ) // Bat1 60%
      {
-	  for(int j=0; j<6; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 255, 0));
-      }
-	  for(int j=6; j<11; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 255, 0));
-      }
-	  for(int j=11; j<16; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 255, 0));
-      }
-	  for(int j=16; j<21; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 255, 0));
-      }
-	  stripFront8.show();
-	  fun = 100;
      }	 
  	 if (fun == 41 ) // Bat1 50%
      {
-	  for(int j=0; j<6; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 255, 0));
-      }
-	  for(int j=6; j<11; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 255, 0));
-      }
-	  for(int j=11; j<16; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 255, 0));
-      }
-	  for(int j=16; j<21; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 0, 0));
-      }
-	  stripFront8.show();
-	  fun = 100;
      }	 
  	 if (fun == 42 ) // Bat1 40%
      {
-	  for(int j=0; j<6; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 255, 0));
-      }
-	  for(int j=6; j<11; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 255, 0));
-      }
-	  for(int j=11; j<16; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 0, 0));
-      }
-	  for(int j=16; j<21; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 0, 0));
-      }
-	  stripFront8.show();
-	  fun = 100;
      }	 
  	 if (fun == 43 ) // Bat1 30%
      {
-	  for(int j=0; j<6; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 0, 0));
-      }
-	  for(int j=6; j<11; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 0, 0));
-      }
-	  for(int j=11; j<16; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 0, 0));
-      }
-	  for(int j=16; j<21; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 0, 0));
-      }
-	  stripFront8.show();
-	  fun = 100;
      }	 
  	 if (fun == 44 ) // Bat1 20%
      {
-	  for(int j=0; j<6; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 0, 0));
-      }
-	  for(int j=6; j<11; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 0, 0));
-      }
-	  for(int j=11; j<16; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(0, 0, 0));
-      }
-	  for(int j=16; j<21; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(0, 0, 0));
-      }
-	  stripFront8.show();
-	  fun = 100;
      }	 
  	 if (fun == 45 ) // Bat1 10%
      {
-	  for(int j=0; j<6; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 0, 0));
-      }
-	  for(int j=6; j<11; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(0, 0, 0));
-      }
-	  for(int j=11; j<16; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(0, 0, 0));
-      }
-	  for(int j=16; j<21; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(0, 0, 0));
-      }
-	  stripFront8.show();
-	  fun = 100;
      }	 
  	 if (fun == 46 ) // Bat2 100%
      {
-	  for(int j=21; j<26; j++) 
+	  for(int j = 21; j <= 41; j++) 
 	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(0, 255, 0));
-      }
-	  for(int j=26; j<31; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(0, 255, 0));
-      }
-	  for(int j=31; j<36; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(0, 255, 0));
-      }
-	  for(int j=36; j<41; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(0, 255, 0));
-      }
-	  stripFront8.show();
-	  fun = 100;
-	  }	 
+	  stripFront8.setPixelColor(j, strip.Color(0, 255, 0));
+      stripFront8.show();
+	  }
+     }	 
  	 if (fun == 47 ) // Bat2 90%
      {
-	  for(int j=21; j<26; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(0, 255, 0));
-      }
-	  for(int j=26; j<31; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(0, 255, 0));
-      }
-	  for(int j=31; j<36; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(0, 255, 0));
-      }
-	  for(int j=36; j<41; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 255, 0));
-      }
-	  stripFront8.show();
-	  fun = 100;
      }	 
  	 if (fun == 48 ) // Bat2 80%
      {
-	  for(int j=21; j<26; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(0, 255, 0));
-      }
-	  for(int j=26; j<31; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(0, 255, 0));
-      }
-	  for(int j=31; j<36; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 255, 0));
-      }
-	  for(int j=36; j<41; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 255, 0));
-      }
-	  stripFront8.show();
-	  fun = 100;
      }	 
  	 if (fun == 49 ) // Bat2 70%
      {
-	  for(int j=21; j<26; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(0, 255, 0));
-      }
-	  for(int j=26; j<31; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 255, 0));
-      }
-	  for(int j=31; j<36; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 255, 0));
-      }
-	  for(int j=36; j<41; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 255, 0));
-      }
-	  stripFront8.show();
-	  fun = 100;
      }	 
  	 if (fun == 50 ) // Bat2 60%
      {
-	  for(int j=21; j<26; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 255, 0));
-      }
-	  for(int j=26; j<31; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 255, 0));
-      }
-	  for(int j=31; j<36; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 255, 0));
-      }
-	  for(int j=36; j<41; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 255, 0));
-      }
-	  stripFront8.show();
-	  fun = 100;
      }	 
  	 if (fun == 51 ) // Bat2 50%
 	 {
-	  for(int j=21; j<26; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 255, 0));
-      }
-	  for(int j=26; j<31; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 255, 0));
-      }
-	  for(int j=31; j<36; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 255, 0));
-      }
-	  for(int j=36; j<41; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 0, 0));
-      }
-	  stripFront8.show();
-	  fun = 100;
      }	 
  	 if (fun == 52 ) // Bat2 40%
      {
-	  for(int j=21; j<26; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 255, 0));
-      }
-	  for(int j=26; j<31; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 255, 0));
-      }
-	  for(int j=31; j<36; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 0, 0));
-      }
-	  for(int j=36; j<41; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 0, 0));
-      }
-	  stripFront8.show();
-	  fun = 100;
      }	 
  	 if (fun == 53 ) // Bat2 30%
      {
-	  for(int j=21; j<26; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 0, 0));
-      }
-	  for(int j=26; j<31; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 0, 0));
-      }
-	  for(int j=31; j<36; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 0, 0));
-      }
-	  for(int j=36; j<41; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 0, 0));
-      }
-	  stripFront8.show();
-	  fun = 100;
      }	 
  	 if (fun == 54 ) // Bat2 20%
      {
-	  for(int j=21; j<26; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(0, 0, 0));
-      }
-	  for(int j=26; j<31; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(0, 0, 0));
-      }
-	  for(int j=31; j<36; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 0, 0));
-      }
-	  for(int j=36; j<41; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 0, 0));
-      }
-	  stripFront8.show();
-	  fun = 100;
      }	 
  	 if (fun == 55 ) // Bat2 10%
      {
-	  for(int j=21; j<26; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(0, 0, 0));
-      }
-	  for(int j=26; j<31; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(0, 0, 0));
-      }
-	  for(int j=31; j<36; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(0, 0, 0));
-      }
-	  for(int j=36; j<41; j++) 
-	  {
-	  stripFront8.setPixelColor(j, stripFront8.Color(255, 0, 0));
-      }
-	  stripFront8.show();
-	  fun = 100;
      }	 
  	 if (fun == 56 ) 
      {
@@ -1021,7 +653,7 @@ void meteorRain(byte red, byte green, byte blue, byte meteorSize, byte meteorTra
 void fadeToBlack(int ledNo, byte fadeValue) {
     uint32_t oldColor;
     uint8_t r, g, b;
-    // int value;
+    int value;
     oldColor = strip.getPixelColor(ledNo);
     r = (oldColor & 0x00ff0000UL) >> 16;
     g = (oldColor & 0x0000ff00UL) >> 8;

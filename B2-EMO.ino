@@ -29,8 +29,9 @@
 //
 //
 // =======================================================================================
-//  Serial3 Intended to be used for LED lighting effects triggered by serial command like 
-//  Serial3.print("C"); sent from Body ADK to another arduino listening for serial commands
+//  Serial2 Intended to be used for DF Player
+//  Serial1 Intended to be used for nano lighting effects triggered by serial command like 
+//  Serial1.print("C"); sent from Body ADK to another arduino listening for serial commands
 //  Software serial used to send commands to the DF player just because, might move to HW
 
 
@@ -64,25 +65,25 @@ int DriveStop = 1500;
 int RotateMin = 1000;
 int RotateMax = 2000;
 int RotateStop = 1500;
-int StrafeMin = 1000;
-int StrafeMax = 2000;
+int StrafeMin = 500;
+int StrafeMax = 2500;
 int StrafeStop = 1500;
 int HeadRightMin = 1125;
 int HeadRightMax = 1950;
 int HeadRightCenter = 1500;   // Level for the R head servo
 int HeadLeftMin = 1200;
 int HeadLeftMax = 2000;
-int HeadLeftCenter = 1650;   // Level for the L servo
-int HeadZMin = 200;   //Min is all the way up in this case
-int HeadZMax = 1925;  //Max is all the way down in this case
+int HeadLeftCenter = 1650;   // Level for the L head servo
+int HeadZMin = 200;   //Min is all the way up in this case as this servo is mounted in a "reversed" position
+int HeadZMax = 1925;  //Max is all the way down in this case as this servo is mounted in a "reversed" position
 int HeadZMid = (HeadZMin + HeadZMax)/2;
 int HeadTMin = 200;     // head turning left/right
 int HeadTMax = 2800;    // head turning left/right
 int HeadTCenter = 1465;  // set this to the center
 int BodyZ1Min = 1100; // This is body Z1 closed 
 int BodyZ1Max = 1900; // This is body Z1 open
-int BodyZ2Min = 1000; // This is body Z1 open  
-int BodyZ2Max = 1950; // This is body Z1 closed 
+int BodyZ2Min = 1000; // This is body Z1 open as this servo is mounted in a "reversed" position
+int BodyZ2Max = 1750; // 1950 This is body Z1 closed as this servo is mounted in a "reversed" position
 int FLSpreadMin = 800;
 int FLSpreadMax = 2000;
 int FRSpreadMin = 900;
@@ -99,6 +100,20 @@ int BRHeightMin = 600;
 int BRHeightMax = 2000;
 int BLHeightMin = 1000;
 int BLHeightMax = 2400;
+int LowerStop = 1500;
+int UpperStop = 1500;
+int LowerLow = 1600;
+int UpperLow = 1600;
+int LowerMed = 1900;
+int UpperMed = 1900;
+int LowerHigh = 2200;
+int UpperHigh = 2200;
+int RLowerLow = 1400;
+int RUpperLow = 1400;
+int RLowerMed = 1100;
+int RUpperMed = 1100;
+int RLowerHigh = 800;
+int RUpperHigh = 800;
 
 
 // ---------------------------------------------------------------------------------------
@@ -111,7 +126,7 @@ int Strafe = 1500;		//1500 is stopped
 int HeadRight = HeadRightCenter;
 int HeadLeft = HeadLeftCenter;
 int HeadT = HeadTCenter;
-int HeadZ = 1200;
+int HeadZ = 1000;
 int BodyZ1 = BodyZ1Max;  //Best to expand body at startup so lower panels can be removed
 int BodyZ2 = BodyZ2Min;  //Best to expand body at startup so lower panels can be removed
 int FLSpread = (FLSpreadMin + FLSpreadMax)/2;
@@ -147,10 +162,8 @@ int turnAmount = HeadTCenter;
 #define PinFRSpread 37
 #define PinBRSpread 39
 #define PinBLSpread 41
-#define PinUpperMotorA 2
-#define PinUpperMotorB 3
-#define PinLowerMotorA 4
-#define PinLowerMotorB 5
+#define PinLowerMotor 3
+#define PinUpperMotor 4
 #define Pin1FeetServoAttached 7
 #define Pin2FeetServoAttached 8
 
@@ -175,6 +188,8 @@ Servo ServoFLSpread;
 Servo ServoFRSpread;
 Servo ServoBRSpread;
 Servo ServoBLSpread;
+Servo ServoUpperMotor;
+Servo ServoLowerMotor;
 
 // ---------------------------------------------------------------------------------------
 // Setup Sound Settings
@@ -240,6 +255,26 @@ boolean WaitingforReconnect = false;
 boolean mainControllerConnected = false;
 int StickY = 0;
 int StickX = 0;
+
+// =======================================================================================
+// Voltage Divider setup
+// =======================================================================================
+
+unsigned char sample_count = 0; // current sample number
+int loopCount = 0;
+int sampleCount = 0;
+#define numSamples 10           // number of samples to average to get voltage
+#define numLoops 200            // number of times through main program loop to take a sample 
+int sum7 = 0;                    // sum of samples taken for 7 volt circuit
+float voltage7 = 0.0;
+float volt7 = 0.0;
+//float adjust7 = 60.21;
+int sum24 = 0;                    // sum of samples taken for 24v circuit
+float voltage24 = 0.0;  
+float volt24 = 0.0;
+boolean batteryDisplayOn = false;
+//float adjust24 = 56.14; 
+
 // =======================================================================================
 // Initialize - Setup Function
 // =======================================================================================
@@ -253,9 +288,8 @@ void setup()
     myDFPlayer.play(16);                //Play the 21st mp3 as a startup sound
 
     //Setup for serial 3
-    Serial3.begin(115200);            //Serial3:: Used for lighting to arduino nano
-  
-	Serial.begin(115200);             // For debugging, in each section can uncomment serial outputs
+    Serial1.begin(115200);            //Serial1:: Used for lighting to arduino nano
+    Serial.begin(115200);             // For debugging, in each section can uncomment serial outputs
 	while (!Serial);
 	if (Usb.Init() == -1)
 	{
@@ -288,6 +322,9 @@ ServoFLSpread.attach(PinFLSpread);
 ServoFRSpread.attach(PinFRSpread);
 ServoBRSpread.attach(PinBRSpread);
 ServoBLSpread.attach(PinBLSpread);
+ServoUpperMotor.attach(PinUpperMotor);
+ServoLowerMotor.attach(PinLowerMotor);
+
 
 // =======================================================================================
 // Set Initial Servo Positions
@@ -309,20 +346,14 @@ ServoFLSpread.writeMicroseconds(FLSpread);
 ServoFRSpread.writeMicroseconds(FRSpread);
 ServoBRSpread.writeMicroseconds(BRSpread);
 ServoBLSpread.writeMicroseconds(BLSpread);
+ServoUpperMotor.writeMicroseconds(UpperStop);
+ServoLowerMotor.writeMicroseconds(LowerStop);
 
 // =======================================================================================
-// Setup Motor Controller for rings/spinners
+// Setup relays for for turning on/off feet servos
 // =======================================================================================  
-pinMode(PinUpperMotorA, OUTPUT);    // Set motor controller pins to output
-pinMode(PinUpperMotorB, OUTPUT);
-pinMode(PinLowerMotorA, OUTPUT);
-pinMode(PinLowerMotorB, OUTPUT);
 pinMode(Pin1FeetServoAttached, OUTPUT);
 pinMode(Pin2FeetServoAttached, OUTPUT);
-digitalWrite(PinUpperMotorA, HIGH);  //Write High (Disable) to all 4 motor controller pins
-digitalWrite(PinUpperMotorB, HIGH);  
-digitalWrite(PinLowerMotorA, HIGH);  
-digitalWrite(PinLowerMotorB, HIGH);  
 digitalWrite(Pin1FeetServoAttached, HIGH);  
 digitalWrite(Pin2FeetServoAttached, HIGH);  
 
@@ -344,6 +375,7 @@ void loop()   	//LOOP through functions from highest to lowest priority.
 	if (animationTrigger == 2) { animation2(); }  // trigger animation 2, head and some body movements
 	if (HeadZ > HeadZMid) {LevelHeadTrigger=1;}   // failsafe to level head if it gets lowered beyond the mid-point
 	animations();
+	voltageCheck();
 }
 
 // =======================================================================================
@@ -439,7 +471,7 @@ boolean ps3MotorDrive(PS3BT* myPS3 = PS3Nav)
 				 {
 
 		  //**************************************************
-		  // L1 and Stick - HeadZ / HeadTurn
+		  // L1 and Stick - HeadZ / HeadTurn (Up/Down Turn Left/Right)
 		  //**************************************************  
          if (myPS3->getButtonPress(L1) && !myPS3->getButtonPress(L2) && !myPS3->getButtonPress(L3))  
           {
@@ -458,7 +490,7 @@ boolean ps3MotorDrive(PS3BT* myPS3 = PS3Nav)
           //Serial.println(HeadT);
           } 
 		  //**************************************************
-		  // L2 and Stick - Head L & R Servo 
+		  // L2 and Stick - Head L & R Servo (Head Tilting)
 		  //**************************************************  
           else if (myPS3->getButtonPress(L2) && !myPS3->getButtonPress(L1) && !myPS3->getButtonPress(L3)) 
            {
@@ -488,7 +520,7 @@ boolean ps3MotorDrive(PS3BT* myPS3 = PS3Nav)
            if (Drive < DriveMin) Drive=DriveMin;
            if ((Drive > 1500) && (Drive - joystickDeadZoneRange < 1500)) Drive=DriveStop;
            if ((Drive < 1500) && ((1500 - Drive) < joystickDeadZoneRange)) Drive=DriveStop;
-           Strafe = (1500 + 6.25 * StickX);
+           Strafe = (1500 + 20 * StickX);
            if (Strafe > StrafeMax) Strafe=StrafeMax;
            if (Strafe < StrafeMin) Strafe=StrafeMin;
            if ((Strafe > 1500) && (Strafe - joystickDeadZoneRange < 1500)) Strafe=StrafeStop;
@@ -501,7 +533,7 @@ boolean ps3MotorDrive(PS3BT* myPS3 = PS3Nav)
            //Serial.println(Strafe); 
           }
 		  //***************************************************
-		  // Stick L1+L2+L3 Feet height for directional leaning
+		  // Stick L1+L2+L3 foot height for directional leaning
 		  //***************************************************  
           else if (myPS3->getButtonPress(L1) && myPS3->getButtonPress(L2) && myPS3->getButtonPress(L3))  
           {
@@ -544,6 +576,42 @@ boolean ps3MotorDrive(PS3BT* myPS3 = PS3Nav)
           //Serial.print (BRHeight);
           //Serial.print (" BL:");
           //Serial.println (BLHeight);
+          }
+		  //***************************************************
+		  // Stick L1+L2 Drive/Rotate plus adjust foot height for directional leaning
+		  //***************************************************  
+
+		  else if (myPS3->getButtonPress(L1) && myPS3->getButtonPress(L2) && !myPS3->getButtonPress(L3))  
+          {
+		  Drive = (1500 - 5.262 * StickY);
+          if (Drive >  DriveMax) Drive= DriveMax;
+          if (Drive <  DriveMin) Drive= DriveMin;
+          if ((Drive > 1500) && (Drive - joystickDeadZoneRange < 1500)) Drive=DriveStop;
+          if ((Drive < 1500) && ((1500 - Drive) < joystickDeadZoneRange)) Drive=DriveStop;
+          Rotate = (1500 - 6.25 * StickX);
+          if (Rotate > RotateMax) Rotate=RotateMax;
+          if (Rotate < RotateMin) Rotate=RotateMin;
+          if ((Rotate > 1500) && (Rotate - joystickDeadZoneRange < 1500)) Rotate=RotateStop;
+          if ((Rotate < 1500) && ((1500 - Rotate) < joystickDeadZoneRange)) Rotate=RotateStop;
+          ServoDrive.writeMicroseconds(Drive);
+          ServoRotate.writeMicroseconds(Rotate);
+		  FLHeight = ((1500 + (8*StickX*-1)) + (1500 + (8*StickY*-1)))/2;
+          BRHeight = ((1500 + (8*StickX)) + (1500 + (8*StickY)))/2;
+          FRHeight = ((1500 - (8*StickX)) + (1500 - (8*StickY*-1)))/2;
+          BLHeight = ((1500 - (8*StickX*-1)) + (1500 - (8*StickY)))/2;
+		  if (FLHeight > FLHeightMax) FLHeight=FLHeightMax;
+          if (FLHeight < FLHeightMin) FLHeight=FLHeightMin;
+          if (BRHeight > BRHeightMax) BRHeight=BRHeightMax;
+          if (BRHeight < BRHeightMin) BRHeight=BRHeightMin;
+          if (FRHeight > FRHeightMax) FRHeight=FRHeightMax;
+          if (FRHeight < FRHeightMin) FRHeight=FRHeightMin;
+          if (BLHeight > BLHeightMax) BLHeight=BLHeightMax;
+          if (BLHeight < BLHeightMin) BLHeight=BLHeightMin;
+		  FootServoPowerUp();
+          ServoFLHeight.writeMicroseconds(FLHeight);
+          ServoFRHeight.writeMicroseconds(FRHeight);
+          ServoBRHeight.writeMicroseconds(BRHeight);
+          ServoBLHeight.writeMicroseconds(BLHeight);
           }
 		  //**************************************************
 		  // Stick - Drive/Rotate
@@ -774,10 +842,12 @@ void ps3ToggleSettings(PS3BT* myPS3 = PS3Nav)
 	// PS + L1 
 	if(!myPS3->getButtonPress(L2) && myPS3->getButtonPress(PS) && myPS3->getButtonClick(L1))
 	{
+  Serial1.print("0");
 	}
 	// PS + L2 
 	if(!myPS3->getButtonPress(L1) && myPS3->getButtonPress(PS) && myPS3->getButtonClick(L2))
 	{
+  Serial1.print("N");
 	}
 	// PS + L3 Toggle Drive Overspeed
 	if (myPS3->getButtonPress(L3) && myPS3->getButtonPress(PS) && isStickEnabled)
@@ -808,13 +878,13 @@ void ps3ToggleSettings(PS3BT* myPS3 = PS3Nav)
 	if(myPS3->getButtonPress(L2) && myPS3->getButtonPress(L1) && myPS3->getButtonClick(UP))
 	{
 	myDFPlayer.play(17);
-	//Serial2.print("0");  // future lighting test
+	Serial1.print("U");  // future lighting test
 	}
 	//  L1 + L2 + Down
 	if(myPS3->getButtonPress(L2) && myPS3->getButtonPress(L1) && myPS3->getButtonClick(DOWN))
 	{
 	myDFPlayer.play(18);
-	//Serial2.print("1");  // future lighting test
+	Serial1.print("W");  // future lighting test
 	}
 	// L1 + L2 + Left
 	if(myPS3->getButtonPress(L2) && myPS3->getButtonPress(L1) && myPS3->getButtonClick(LEFT))
@@ -907,7 +977,12 @@ void ps3ToggleSettings(PS3BT* myPS3 = PS3Nav)
 	// L2 + PS 
 	if(!myPS3->getButtonPress(L1) && myPS3->getButtonPress(L2) && myPS3->getButtonClick(PS))
 	{
-	}
+		if (batteryDisplayOn == 1) {
+		  batteryDisplayOn=0;
+      Serial1.print("Z");
+      Serial1.print("u");
+		} else {batteryDisplayOn=1;}
+		}
 
 // =======================================================================================
 // L1 Button Combos 
@@ -1116,10 +1191,11 @@ void animation1() // Head Only Movements
 		secondsInAnimation = 3; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial1.print ("!");
 		Serial.print ("Step:");
-        Serial.print (animationStep);
+    Serial.print (animationStep);
 		Serial.print ("  Delay:");
-        Serial.println (animateDelay/1000);
+    Serial.println (animateDelay/1000);
 	}
 	if (animateTimer > animateDelay && animationStep == 2)
 	{ 
@@ -1127,6 +1203,7 @@ void animation1() // Head Only Movements
 		secondsInAnimation = 2; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial1.print ("y");
 		Serial.print ("Step:");
         Serial.print (animationStep);
 		Serial.print ("  Delay:");
@@ -1150,6 +1227,8 @@ void animation1() // Head Only Movements
 		secondsInAnimation = 2; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial1.print ("v");
+		Serial1.print ("R");
 		Serial.print ("Step:");
         Serial.print (animationStep);
 		Serial.print ("  Delay:");
@@ -1163,6 +1242,7 @@ void animation1() // Head Only Movements
 		secondsInAnimation = 2; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+    Serial1.print ("w");
 		Serial.print ("Step:");
         Serial.print (animationStep);
 		Serial.print ("  Delay:");
@@ -1175,6 +1255,7 @@ void animation1() // Head Only Movements
 		secondsInAnimation = 2; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial1.print ("S");
 		Serial.print ("Step:");
         Serial.print (animationStep);
 		Serial.print ("  Delay:");
@@ -1201,6 +1282,7 @@ void animation1() // Head Only Movements
 		secondsInAnimation = 2; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial1.print ("V");
 		Serial.print ("Step:");
         Serial.print (animationStep);
 		Serial.print ("  Delay:");
@@ -1214,6 +1296,7 @@ void animation1() // Head Only Movements
 		secondsInAnimation = 3; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial1.print ("W");
 		Serial.print ("Step:");
         Serial.print (animationStep);
 		Serial.print ("  Delay:");
@@ -1225,6 +1308,7 @@ void animation1() // Head Only Movements
 		secondsInAnimation = 3; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial1.print ("V");
 		Serial.print ("Step:");
         Serial.print (animationStep);
 		Serial.print ("  Delay:");
@@ -1236,6 +1320,7 @@ void animation1() // Head Only Movements
 		secondsInAnimation = 3; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial1.print ("W");
 		Serial.print ("Step:");
         Serial.print (animationStep);
 		Serial.print ("  Delay:");
@@ -1250,6 +1335,7 @@ void animation1() // Head Only Movements
 		secondsInAnimation = 2; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial1.print ("V");
 		Serial.print ("Step:");
         Serial.print (animationStep);
 		Serial.print ("  Delay:");
@@ -1262,6 +1348,7 @@ void animation1() // Head Only Movements
 		secondsInAnimation = 2; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial1.print ("W");
 		Serial.print ("Step:");
         Serial.print (animationStep);
 		Serial.print ("  Delay:");
@@ -1276,6 +1363,7 @@ void animation1() // Head Only Movements
 		secondsInAnimation = 2; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+    Serial1.print ("w");
 		Serial.print ("Step:");
         Serial.print (animationStep);
 		Serial.print ("  Delay:");
@@ -1289,6 +1377,7 @@ void animation1() // Head Only Movements
 		secondsInAnimation = 1; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+    Serial1.print ("x");
 		Serial.print ("Step:");
         Serial.print (animationStep);
 		Serial.print ("  Delay:");
@@ -1303,6 +1392,7 @@ void animation1() // Head Only Movements
 		secondsInAnimation = 2; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial1.print ("y");
 		Serial.print ("Step:");
         Serial.print (animationStep);
 		Serial.print ("  Delay:");
@@ -1314,6 +1404,7 @@ void animation1() // Head Only Movements
 		secondsInAnimation = 1; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial1.print ("w");
 		Serial.print ("Step:");
         Serial.print (animationStep);
 		Serial.print ("  Delay:");
@@ -1340,6 +1431,7 @@ void animation1() // Head Only Movements
 		secondsInAnimation = 4; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial1.print ("x");
 		Serial.print ("Step:");
         Serial.print (animationStep);
 		Serial.print ("  Delay:");
@@ -1351,6 +1443,7 @@ void animation1() // Head Only Movements
 		secondsInAnimation = 4;// How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial1.print ("y");
 		Serial.print ("Step:");
         Serial.print (animationStep);
 		Serial.print ("  Delay:");
@@ -1362,6 +1455,7 @@ void animation1() // Head Only Movements
 		secondsInAnimation = 30;// How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial1.print ("w");
 		Serial.print ("Step:");
         Serial.print (animationStep);
 		Serial.print ("  Delay:");
@@ -1386,6 +1480,8 @@ void animation1() // Head Only Movements
 		TiltHeadLeftTrigger=0;
 		TiltHeadRightTrigger=0;
 		TurnHeadTrigger=0;
+    Serial1.print ("Y");
+    Serial1.print ("v");
 		Serial.print ("Step:");
         Serial.print (animationStep);
 		Serial.print ("  Delay:");
@@ -1408,6 +1504,8 @@ void animation2()   // Head and other movements
 		secondsInAnimation = 5; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial1.print ("!");
+		Serial1.print ("V");
 		Serial.print ("Step:");
         Serial.print (animationStep);
 		Serial.print ("  Delay:");
@@ -1419,6 +1517,7 @@ void animation2()   // Head and other movements
 		secondsInAnimation = 2; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial1.print ("y");
 		Serial.print ("Step:");
         Serial.print (animationStep);
 		Serial.print ("  Delay:");
@@ -1430,6 +1529,8 @@ void animation2()   // Head and other movements
 		secondsInAnimation = 1; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial1.print ("w");
+		Serial1.print ("R");
 		Serial.print ("Step:");
         Serial.print (animationStep);
 		Serial.print ("  Delay:");
@@ -1443,6 +1544,8 @@ void animation2()   // Head and other movements
 		secondsInAnimation = 2; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial1.print ("v");
+		Serial1.print ("R");
 		Serial.print ("Step:");
         Serial.print (animationStep);
 		Serial.print ("  Delay:");
@@ -1456,6 +1559,8 @@ void animation2()   // Head and other movements
 		secondsInAnimation = 2; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial1.print ("w");
+		Serial1.print ("V");
 		Serial.print ("Step:");
         Serial.print (animationStep);
 		Serial.print ("  Delay:");
@@ -1468,6 +1573,8 @@ void animation2()   // Head and other movements
 		secondsInAnimation = 2; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial1.print ("S");
+		Serial1.print ("v");
 		Serial.print ("Step:");
         Serial.print (animationStep);
 		Serial.print ("  Delay:");
@@ -1481,6 +1588,7 @@ void animation2()   // Head and other movements
 		secondsInAnimation = 2; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial1.print ("w");
 		Serial.print ("Step:");
         Serial.print (animationStep);
 		Serial.print ("  Delay:");
@@ -1494,6 +1602,8 @@ void animation2()   // Head and other movements
 		secondsInAnimation = 2; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial1.print ("w");
+		Serial1.print ("V");
 		Serial.print ("Step:");
         Serial.print (animationStep);
 		Serial.print ("  Delay:");
@@ -1507,6 +1617,8 @@ void animation2()   // Head and other movements
 		secondsInAnimation = 3; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial1.print ("W");
+		Serial1.print ("z");
 		Serial.print ("Step:");
         Serial.print (animationStep);
 		Serial.print ("  Delay:");
@@ -1518,6 +1630,8 @@ void animation2()   // Head and other movements
 		secondsInAnimation = 3; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial1.print ("V");
+		Serial1.print ("w");
 		Serial.print ("Step:");
         Serial.print (animationStep);
 		Serial.print ("  Delay:");
@@ -1529,6 +1643,8 @@ void animation2()   // Head and other movements
 		secondsInAnimation = 3; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial1.print ("W");
+		Serial1.print ("z");
 		Serial.print ("Step:");
         Serial.print (animationStep);
 		Serial.print ("  Delay:");
@@ -1543,6 +1659,8 @@ void animation2()   // Head and other movements
 		secondsInAnimation = 2; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial1.print ("V");
+		Serial1.print ("w");
 		Serial.print ("Step:");
         Serial.print (animationStep);
 		Serial.print ("  Delay:");
@@ -1555,6 +1673,7 @@ void animation2()   // Head and other movements
 		secondsInAnimation = 2; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial1.print ("W");
 		Serial.print ("Step:");
         Serial.print (animationStep);
 		Serial.print ("  Delay:");
@@ -1569,6 +1688,8 @@ void animation2()   // Head and other movements
 		secondsInAnimation = 2; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial1.print ("x");
+		Serial1.print ("w");
 		Serial.print ("Step:");
         Serial.print (animationStep);
 		Serial.print ("  Delay:");
@@ -1582,6 +1703,8 @@ void animation2()   // Head and other movements
 		secondsInAnimation = 1; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial1.print ("V");
+		Serial1.print ("x");
 		Serial.print ("Step:");
         Serial.print (animationStep);
 		Serial.print ("  Delay:");
@@ -1594,6 +1717,8 @@ void animation2()   // Head and other movements
 		secondsInAnimation = 2; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial1.print ("R");
+		Serial1.print ("y");
 		Serial.print ("Step:");
         Serial.print (animationStep);
 		Serial.print ("  Delay:");
@@ -1605,6 +1730,8 @@ void animation2()   // Head and other movements
 		secondsInAnimation = 1; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial1.print ("V");
+		Serial1.print ("w");
 		Serial.print ("Step:");
         Serial.print (animationStep);
 		Serial.print ("  Delay:");
@@ -1616,6 +1743,8 @@ void animation2()   // Head and other movements
 		secondsInAnimation = 2; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial1.print ("W");
+		Serial1.print ("z");
 		Serial.print ("Step:");
         Serial.print (animationStep);
 		Serial.print ("  Delay:");
@@ -1629,6 +1758,8 @@ void animation2()   // Head and other movements
 		secondsInAnimation = 5; // How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial1.print ("V");
+		Serial1.print ("w");
 		Serial.print ("Step:");
         Serial.print (animationStep);
 		Serial.print ("  Delay:");
@@ -1641,6 +1772,8 @@ void animation2()   // Head and other movements
 		secondsInAnimation = 30;// How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial1.print ("W");
+		Serial1.print ("z");
 		Serial.print ("Step:");
         Serial.print (animationStep);
 		Serial.print ("  Delay:");
@@ -1653,6 +1786,8 @@ void animation2()   // Head and other movements
 		secondsInAnimation = 10;// How long should it take
 		animationStep++;        // This increments the step
 		animateDelay = (animateDelay + (1000 * secondsInAnimation));  // This sets the next trigger time
+		Serial1.print ("Y");
+		Serial1.print ("v");
 		Serial.print ("Step:");
         Serial.print (animationStep);
 		Serial.print ("  Delay:");
@@ -1940,131 +2075,70 @@ void wobble(int speedDelay)
 {  
 	Serial.println ("Wobble rings");
 	myDFPlayer.play(4);
-    digitalWrite(PinUpperMotorA, LOW);
-    digitalWrite(PinUpperMotorB, HIGH);
-    digitalWrite(PinLowerMotorA, LOW);
-    digitalWrite(PinLowerMotorB, HIGH);
+    ServoUpperMotor.writeMicroseconds(UpperMed);
+	ServoLowerMotor.writeMicroseconds(RLowerMed);
+	delay(speedDelay);
+    ServoUpperMotor.writeMicroseconds(RUpperMed);
+	ServoLowerMotor.writeMicroseconds(LowerMed);
     delay(speedDelay);
-	digitalWrite(PinUpperMotorA, HIGH);
-    digitalWrite(PinUpperMotorB, LOW);
-    digitalWrite(PinLowerMotorA, HIGH);
-    digitalWrite(PinLowerMotorB, LOW);
+	ServoUpperMotor.writeMicroseconds(UpperMed);
+	ServoLowerMotor.writeMicroseconds(RLowerMed);
+	delay(speedDelay);
+    ServoUpperMotor.writeMicroseconds(RUpperMed);
+	ServoLowerMotor.writeMicroseconds(LowerMed);
     delay(speedDelay);
-	digitalWrite(PinUpperMotorA, LOW);
-    digitalWrite(PinUpperMotorB, HIGH);
-    digitalWrite(PinLowerMotorA, LOW);
-    digitalWrite(PinLowerMotorB, HIGH);
+	ServoUpperMotor.writeMicroseconds(UpperMed);
+	ServoLowerMotor.writeMicroseconds(RLowerMed);
+	delay(speedDelay);
+    ServoUpperMotor.writeMicroseconds(RUpperMed);
+	ServoLowerMotor.writeMicroseconds(LowerMed);
     delay(speedDelay);
-	digitalWrite(PinUpperMotorA, HIGH);
-    digitalWrite(PinUpperMotorB, LOW);
-    digitalWrite(PinLowerMotorA, HIGH);
-    digitalWrite(PinLowerMotorB, LOW);
+	ServoUpperMotor.writeMicroseconds(UpperMed);
+	ServoLowerMotor.writeMicroseconds(RLowerMed);
+	delay(speedDelay);
+    ServoUpperMotor.writeMicroseconds(RUpperMed);
+	ServoLowerMotor.writeMicroseconds(LowerMed);
     delay(speedDelay);
-    digitalWrite(PinUpperMotorA, LOW);
-    digitalWrite(PinUpperMotorB, HIGH);
-    digitalWrite(PinLowerMotorA, LOW);
-    digitalWrite(PinLowerMotorB, HIGH);
-    delay(speedDelay);
-	digitalWrite(PinUpperMotorA, HIGH);
-    digitalWrite(PinUpperMotorB, LOW);
-    digitalWrite(PinLowerMotorA, HIGH);
-    digitalWrite(PinLowerMotorB, LOW);
-    delay(speedDelay);
-	digitalWrite(PinUpperMotorA, LOW);
-    digitalWrite(PinUpperMotorB, HIGH);
-    digitalWrite(PinLowerMotorA, LOW);
-    digitalWrite(PinLowerMotorB, HIGH);
-    delay(speedDelay);
-	digitalWrite(PinUpperMotorA, HIGH);
-    digitalWrite(PinUpperMotorB, LOW);
-    digitalWrite(PinLowerMotorA, HIGH);
-    digitalWrite(PinLowerMotorB, LOW);
-    delay(speedDelay);
-	digitalWrite(PinUpperMotorA, LOW);
-    digitalWrite(PinUpperMotorB, HIGH);
-    digitalWrite(PinLowerMotorA, LOW);
-    digitalWrite(PinLowerMotorB, HIGH);
-    delay(speedDelay);
-	digitalWrite(PinUpperMotorA, HIGH);
-    digitalWrite(PinUpperMotorB, LOW);
-    digitalWrite(PinLowerMotorA, HIGH);
-    digitalWrite(PinLowerMotorB, LOW);
-    delay(speedDelay);
-    digitalWrite(PinUpperMotorA, LOW);
-    digitalWrite(PinUpperMotorB, HIGH);
-    digitalWrite(PinLowerMotorA, LOW);
-    digitalWrite(PinLowerMotorB, HIGH);
-    delay(speedDelay);
-	digitalWrite(PinUpperMotorA, HIGH);
-    digitalWrite(PinUpperMotorB, LOW);
-    digitalWrite(PinLowerMotorA, HIGH);
-    digitalWrite(PinLowerMotorB, LOW);
-    delay(speedDelay);
-    digitalWrite(PinUpperMotorA, HIGH);
-    digitalWrite(PinUpperMotorB, HIGH);
-    digitalWrite(PinLowerMotorA, HIGH);
-    digitalWrite(PinLowerMotorB, HIGH);
+	ServoUpperMotor.writeMicroseconds(UpperStop);
+	ServoLowerMotor.writeMicroseconds(LowerStop);
 }
 
 
 void spinTRBR(int speedDelay) //
 {  
-    digitalWrite(PinUpperMotorA, HIGH);
-    digitalWrite(PinUpperMotorB, LOW);
-    digitalWrite(PinLowerMotorA, HIGH);
-    digitalWrite(PinLowerMotorB, LOW);
-    //Serial.println ("Top Right, Bottom Right");
-	delay(speedDelay);
-    digitalWrite(PinUpperMotorA, HIGH);
-    digitalWrite(PinUpperMotorB, HIGH);
-    digitalWrite(PinLowerMotorA, HIGH);
-    digitalWrite(PinLowerMotorB, HIGH);
-	
+    ServoUpperMotor.writeMicroseconds(RUpperMed);
+	ServoLowerMotor.writeMicroseconds(LowerMed);
+    delay(speedDelay);
+	ServoUpperMotor.writeMicroseconds(UpperStop);
+	ServoLowerMotor.writeMicroseconds(LowerStop);
 }
 
 void spinTLBL(int speedDelay) //
 { 
-    digitalWrite(PinUpperMotorA, LOW);
-    digitalWrite(PinUpperMotorB, HIGH);
-    digitalWrite(PinLowerMotorA, LOW);
-    digitalWrite(PinLowerMotorB, HIGH);
-    //Serial.println ("Top Left, Bottom Left");
-	delay(speedDelay);
-    digitalWrite(PinUpperMotorA, HIGH);
-    digitalWrite(PinUpperMotorB, HIGH);
-    digitalWrite(PinLowerMotorA, HIGH);
-    digitalWrite(PinLowerMotorB, HIGH);
+    ServoUpperMotor.writeMicroseconds(UpperMed);
+	ServoLowerMotor.writeMicroseconds(RLowerMed);
+    delay(speedDelay);
+	ServoUpperMotor.writeMicroseconds(UpperStop);
+	ServoLowerMotor.writeMicroseconds(LowerStop);
 	
 }
 
 void spinTLBR(int speedDelay) //
 { 
-    digitalWrite(PinUpperMotorA, HIGH);
-    digitalWrite(PinUpperMotorB, LOW);
-    digitalWrite(PinLowerMotorA, LOW);
-    digitalWrite(PinLowerMotorB, HIGH);
-    //Serial.println ("Top Left, Bottom Right");
-	delay(speedDelay);
-    digitalWrite(PinUpperMotorA, HIGH);
-    digitalWrite(PinUpperMotorB, HIGH);
-    digitalWrite(PinLowerMotorA, HIGH);
-    digitalWrite(PinLowerMotorB, HIGH);
-	
+    ServoUpperMotor.writeMicroseconds(UpperMed);
+	ServoLowerMotor.writeMicroseconds(LowerMed);
+    delay(speedDelay);
+	ServoUpperMotor.writeMicroseconds(UpperStop);
+	ServoLowerMotor.writeMicroseconds(LowerStop);
 }
 
 void spinTRBL(int speedDelay) //
 { 
-	digitalWrite(PinUpperMotorA, LOW);
-    digitalWrite(PinUpperMotorB, HIGH);
-    digitalWrite(PinLowerMotorA, HIGH);
-    digitalWrite(PinLowerMotorB, LOW);
-    //Serial.println ("Top Right, Bottom Left");
-	delay(speedDelay);
-    digitalWrite(PinUpperMotorA, HIGH);
-    digitalWrite(PinUpperMotorB, HIGH);
-    digitalWrite(PinLowerMotorA, HIGH);
-    digitalWrite(PinLowerMotorB, HIGH);
-	
+    ServoUpperMotor.writeMicroseconds(RUpperMed);
+	ServoLowerMotor.writeMicroseconds(RLowerMed);
+    delay(speedDelay);
+	ServoUpperMotor.writeMicroseconds(UpperStop);
+	ServoLowerMotor.writeMicroseconds(LowerStop);
 }
 
 void relax()   // Move all positions to the middle of the extents
@@ -2111,7 +2185,63 @@ void centerRelax()   // Move all positions to the middle of the extents
 	//Serial.println("Centered and Relaxed");
 }
 
-
+// =======================================================================================
+// Read voltage for batteries
+// =======================================================================================
+void voltageCheck() {
+ 	if (loopCount >= numLoops) {
+    	// take a number of analog samples and add them up
+    	if (sampleCount < numSamples) {
+       	sum7 += analogRead(A4);
+       	sum24 += analogRead(A5);
+       	sampleCount++;
+		}
+		loopCount = 0;
+	}
+	loopCount++;
+	if ((sampleCount >= numSamples) && (batteryDisplayOn == 1)) {
+	// calculate the voltage
+  voltage24 = ((float)sum24 / (float)numSamples);
+	voltage7 = ((float)sum7 / (float)numSamples);
+	volt24 = map(voltage24, 400, 465, 0, 100);
+	volt7 = map(voltage7, 126, 146, 0, 100);
+	// send voltage for display on Serial Monitor
+	if (volt24 < 10) {Serial1.print("u");}
+  if ((volt24 >= 10 ) && ( volt24 < 20)) {Serial1.print("t");}
+	if ((volt24 >= 20 ) && ( volt24 < 30)) {Serial1.print("s");}
+	if ((volt24 >= 30 ) && ( volt24 < 40)) {Serial1.print("r");}
+	if ((volt24 >= 40 ) && ( volt24 < 50)) {Serial1.print("q");}
+	if ((volt24 >= 50 ) && ( volt24 < 60)) {Serial1.print("p");}
+	if ((volt24 >= 60 ) && ( volt24 < 70)) {Serial1.print("o");}
+	if ((volt24 >= 70 ) && ( volt24 < 80)) {Serial1.print("n");}
+	if ((volt24 >= 80 ) && ( volt24 < 90)) {Serial1.print("m");}
+	if ((volt24 >= 90 ) && ( volt24 < 95)) {Serial1.print("l");}
+	if (volt24 >= 95 ) {Serial1.print("k");}
+	delay(25);
+	if (volt7 < 10) {Serial1.print("Z");}
+	if ((volt7 >= 10 ) && ( volt7 < 20)) {Serial1.print("j");}
+	if ((volt7 >= 20 ) && ( volt7 < 30)) {Serial1.print("i");}
+	if ((volt7 >= 30 ) && ( volt7 < 40)) {Serial1.print("h");}
+	if ((volt7 >= 40 ) && ( volt7 < 50)) {Serial1.print("g");}
+	if ((volt7 >= 50 ) && ( volt7 < 60)) {Serial1.print("f");}
+	if ((volt7 >= 60 ) && ( volt7 < 70)) {Serial1.print("e");}
+	if ((volt7 >= 70 ) && ( volt7 < 80)) {Serial1.print("d");}
+	if ((volt7 >= 80 ) && ( volt7 < 90)) {Serial1.print("c");}
+	if ((volt7 >= 90 ) && ( volt7 < 95)) {Serial1.print("b");}
+	if (volt7 >= 95) {Serial1.print("a");}
+    //Serial.print("24v:");
+	  //Serial.print(voltage24);
+	  //Serial.print(" 7v:");
+	  //Serial.println(voltage7);
+    //Serial.print("24v%:");
+    //Serial.print(volt24);
+    //Serial.print(" 7v%:");
+    //Serial.println(volt7);
+	  sampleCount = 0;
+    sum7 = 0;
+    sum24 = 0;
+	} 
+}
 
 
 
